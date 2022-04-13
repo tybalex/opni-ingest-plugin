@@ -28,7 +28,7 @@ validateNebulaPom.enabled = false
 
 buildscript {
     ext {
-        opensearch_version = "1.2.5-SNAPSHOT"
+        opensearch_version = "1.2.3-SNAPSHOT"
     }
 
     repositories {
@@ -52,7 +52,7 @@ repositories {
 
 dependencies {
     // required for the yaml test to run
-    yamlRestTestImplementation 'org.apache.logging.log4j:log4j-core:2.17.1'
+    yamlRestTestImplementation 'org.apache.logging.log4j:log4j-core:2.17.0'
 }
 
 

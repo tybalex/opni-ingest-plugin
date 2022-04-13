@@ -11,6 +11,7 @@ curl -XPUT localhost:9200/_ingest/pipeline/my_simple_pipeline \
     ]
 }'
 
+sleep 2
 
 curl -XPUT localhost:9200/my_index \
 -H "Content-Type: application/json" \
@@ -20,11 +21,14 @@ curl -XPUT localhost:9200/my_index \
     }
 }'
 
+sleep 1
 
 curl -XPOST localhost:9200/my_index/_doc \
 -H "Content-Type: application/json" \
 -d '{
     "log": "I liked this article on pipelines!"
 }'
+
+sleep 1
 
 curl -X GET localhost:9200/my_index/_search

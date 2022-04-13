@@ -6,6 +6,8 @@
 ./gradlew build
 ```
 
+`build/distributions/opnipreprocessing.zip` is generated.
+
 2. Install OpenSearch and build a local artifact for the integration tests and build tools ([Learn more here](https://github.com/opensearch-project/opensearch-plugins/blob/main/BUILDING.md)):
 
 ``` 
