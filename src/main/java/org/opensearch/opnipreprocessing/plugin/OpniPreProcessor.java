@@ -1,3 +1,10 @@
+/*
+ * SPDX-License-Identifier: Apache-2.0
+ *
+ * The OpenSearch Contributors require contributions made to
+ * this file be licensed under the Apache-2.0 license or a
+ * compatible open source license.
+ */
 package org.opensearch.opnipreprocessing.plugin;
 
 import org.opensearch.common.Strings;
@@ -9,17 +16,13 @@ import org.opensearch.ingest.Processor;
 
 import java.io.IOException;
 import java.util.Map;
+import java.util.Random;
 
-/*
- * SPDX-License-Identifier: Apache-2.0
- *
- * The OpenSearch Contributors require contributions made to
- * this file be licensed under the Apache-2.0 license or a
- * compatible open source license.
- */
 import static org.opensearch.ingest.ConfigurationUtils.readBooleanProperty;
 import static org.opensearch.ingest.ConfigurationUtils.readOptionalStringProperty;
 import static org.opensearch.ingest.ConfigurationUtils.readStringProperty;
+
+
 
 public final class OpniPreProcessor extends AbstractProcessor {
 
@@ -35,6 +38,18 @@ public final class OpniPreProcessor extends AbstractProcessor {
         this.targetField = targetField;
     }
 
+    public String getSaltString() {
+        String SALTCHARS = "ABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890";
+        StringBuilder salt = new StringBuilder();
+        Random rnd = new Random();
+        while (salt.length() < 18) { // length of the random string.
+            int index = (int) (rnd.nextFloat() * SALTCHARS.length());
+            salt.append(SALTCHARS.charAt(index));
+        }
+        String saltStr = salt.toString();
+        return saltStr;
+    }
+
     @Override
     public IngestDocument execute(IngestDocument ingestDocument) throws Exception {
 
@@ -48,9 +63,11 @@ public final class OpniPreProcessor extends AbstractProcessor {
             return ingestDocument;
         }
 
-        // logic to mask logs, placeholder for now
-        masked_log = "masked: " + actual_log;
+        String generated_id = getSaltString();
+        ingestDocument.setFieldValue("_id", generated_id);
 
+        // logic to mask logs, placeholder for now      
+        masked_log = "masked: " + generated_id + actual_log;
         ingestDocument.setFieldValue(targetField, masked_log);
 
         return ingestDocument;
