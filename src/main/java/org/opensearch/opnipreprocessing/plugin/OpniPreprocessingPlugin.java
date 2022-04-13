@@ -18,6 +18,7 @@ import org.opensearch.plugins.Plugin;
 
 public class OpniPreprocessingPlugin extends Plugin implements IngestPlugin {
     // Implement the relevant Plugin Interfaces here
+
     @Override
     public Map<String, Processor.Factory> getProcessors(Processor.Parameters parameters) {
 
