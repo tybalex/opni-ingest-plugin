@@ -17,6 +17,11 @@ import org.opensearch.ingest.Processor;
 import java.io.IOException;
 import java.util.Map;
 import java.util.Random;
+import io.nats.client.Connection;
+import io.nats.client.Nats;
+import io.nats.client.impl.NatsMessage;
+import java.nio.charset.StandardCharsets;
+
 
 import static org.opensearch.ingest.ConfigurationUtils.readBooleanProperty;
 import static org.opensearch.ingest.ConfigurationUtils.readOptionalStringProperty;
@@ -30,12 +35,15 @@ public final class OpniPreProcessor extends AbstractProcessor {
 
     private final String field;
     private final String targetField;
+    private Connection nc;
 
-    public OpniPreProcessor(String tag, String description, String field, String targetField)
+    // public OpniPreProcessor(String tag, String description, String field, String targetField)
+    public OpniPreProcessor(String tag, String description, String field, String targetField, Connection nc)
             throws IOException {
         super(tag, description);
         this.field = field;
         this.targetField = targetField;
+        this.nc = nc;
     }
 
     public String getSaltString() {
@@ -70,6 +78,8 @@ public final class OpniPreProcessor extends AbstractProcessor {
         masked_log = "masked: " + generated_id + actual_log;
         ingestDocument.setFieldValue(targetField, masked_log);
 
+        this.nc.publish("sub1", masked_log.getBytes(StandardCharsets.UTF_8) );
+
         return ingestDocument;
     }
 
@@ -79,6 +89,12 @@ public final class OpniPreProcessor extends AbstractProcessor {
     }
 
     public static final class Factory implements Processor.Factory {
+   
+        private Connection nc;
+
+        Factory(Connection nc){
+            this.nc = nc;
+        }
 
         @Override
         public Processor create(Map<String, Processor.Factory> processorFactories, String tag, String description,
@@ -86,7 +102,8 @@ public final class OpniPreProcessor extends AbstractProcessor {
             String field = readStringProperty(TYPE, tag, config, "field");
             String targetField = readStringProperty(TYPE, tag, config, "target_field");
 
-            return new OpniPreProcessor(tag, description, field, targetField);
+            // return new OpniPreProcessor(tag, description, field, targetField);
+            return new OpniPreProcessor(tag, description, field, targetField, nc);
         }
     }
 }
