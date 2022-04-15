@@ -47,6 +47,9 @@ public class OpniPreprocessingPlugin extends Plugin implements IngestPlugin {
     }
 
     private Connection connectNats() throws PrivilegedActionException {
+    	/***
+    	this method assigns privilege to create a nats connection. 
+        ***/
     	try {
 		    return AccessController.doPrivileged(new PrivilegedExceptionAction<Connection>() {
 		        @Override
