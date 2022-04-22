@@ -1,4 +1,4 @@
-curl -XPUT localhost:9200/_ingest/pipeline/my_simple_pipeline \
+curl -XPUT -u admin:admin --insecure https://localhost:9200/_ingest/pipeline/my_simple_pipeline \
 -H "Content-Type: application/json" \
 -d '{
     "processors": [
@@ -13,7 +13,7 @@ curl -XPUT localhost:9200/_ingest/pipeline/my_simple_pipeline \
 
 sleep 2
 
-curl -XPUT localhost:9200/my_index \
+curl -XPUT -u admin:admin --insecure https://localhost:9200/my_index \
 -H "Content-Type: application/json" \
 -d '{
     "settings": {
@@ -23,7 +23,7 @@ curl -XPUT localhost:9200/my_index \
 
 sleep 1
 
-curl -XPOST localhost:9200/my_index/_doc \
+curl -XPOST -u admin:admin --insecure https://localhost:9200/my_index/_doc \
 -H "Content-Type: application/json" \
 -d '{
     "log": "I0316 12:03:47.578853       1 get.go:259] \"Starting watch\" path=\"/api/v1/namespaces/dgps/secrets\" resourceVersion=\"1035642112\" labels=\"\" fields=\"metadata.name=jenkins-master-token\"\n timeout=\"5m25s\""
@@ -31,4 +31,4 @@ curl -XPOST localhost:9200/my_index/_doc \
 
 sleep 1
 
-curl -X GET localhost:9200/my_index/_search
+curl -X GET -u admin:admin --insecure https://localhost:9200/my_index/_search

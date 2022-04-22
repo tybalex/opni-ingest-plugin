@@ -26,9 +26,9 @@ import java.security.PrivilegedAction;
 
 
 public class OpniPreprocessingPlugin extends Plugin implements IngestPlugin {
-    // Implement the relevant Plugin Interfaces here
 
-    public Connection nc; 
+    private Connection nc; 
+    private LogMasker masker;
 
     public OpniPreprocessingPlugin()throws PrivilegedActionException{
     	try{
@@ -36,14 +36,13 @@ public class OpniPreprocessingPlugin extends Plugin implements IngestPlugin {
     	}catch (PrivilegedActionException e) {
 		    throw e;
 		}
-    	
+    	masker = new LogMasker();
     }
 
     @Override
     public Map<String, Processor.Factory> getProcessors(Processor.Parameters parameters) {
 
-        return Collections.singletonMap(OpniPreProcessor.TYPE, new OpniPreProcessor.Factory(nc));
-        // return Collections.singletonMap(OpniPreProcessor.TYPE, new OpniPreProcessor.Factory());
+        return Collections.singletonMap(OpniPreProcessor.TYPE, new OpniPreProcessor.Factory(nc, masker));
     }
 
     private Connection connectNats() throws PrivilegedActionException {

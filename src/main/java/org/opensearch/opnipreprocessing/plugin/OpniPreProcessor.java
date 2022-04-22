@@ -36,14 +36,15 @@ public final class OpniPreProcessor extends AbstractProcessor {
     private final String field;
     private final String targetField;
     private Connection nc;
+    private LogMasker masker;
 
-    // public OpniPreProcessor(String tag, String description, String field, String targetField)
-    public OpniPreProcessor(String tag, String description, String field, String targetField, Connection nc)
+    public OpniPreProcessor(String tag, String description, String field, String targetField, Connection nc, LogMasker masker)
             throws IOException {
         super(tag, description);
         this.field = field;
         this.targetField = targetField;
         this.nc = nc;
+        this.masker = masker;
     }
 
     public String getSaltString() {
@@ -61,13 +62,13 @@ public final class OpniPreProcessor extends AbstractProcessor {
     @Override
     public IngestDocument execute(IngestDocument ingestDocument) throws Exception {
 
-        String actual_log, masked_log;
+        String actualLog, maskedLog;
         try {
-            actual_log = ingestDocument.getFieldValue(field, String.class);
+            actualLog = ingestDocument.getFieldValue(field, String.class);
         } catch (IllegalArgumentException e) {
             throw e;
         }
-        if (Strings.isEmpty(actual_log)) {
+        if (Strings.isEmpty(actualLog)) {
             return ingestDocument;
         }
 
@@ -75,10 +76,10 @@ public final class OpniPreProcessor extends AbstractProcessor {
         ingestDocument.setFieldValue("_id", generated_id);
 
         // logic to mask logs, placeholder for now      
-        masked_log = "masked: " + generated_id + actual_log;
-        ingestDocument.setFieldValue(targetField, masked_log);
+        maskedLog = maskLogs(actualLog, false);
+        ingestDocument.setFieldValue(targetField, maskedLog);
 
-        this.nc.publish("sub1", masked_log.getBytes(StandardCharsets.UTF_8) );
+        this.nc.publish("sub1", maskedLog.getBytes(StandardCharsets.UTF_8) );
 
         return ingestDocument;
     }
@@ -88,12 +89,18 @@ public final class OpniPreProcessor extends AbstractProcessor {
         return TYPE;
     }
 
+    private String maskLogs(String log, boolean isControlPlaneLog) {
+        return masker.mask(log, isControlPlaneLog);
+    }
+
     public static final class Factory implements Processor.Factory {
    
         private Connection nc;
+        private LogMasker masker;
 
-        Factory(Connection nc){
+        Factory(Connection nc, LogMasker masker){
             this.nc = nc;
+            this.masker = masker;
         }
 
         @Override
@@ -102,8 +109,7 @@ public final class OpniPreProcessor extends AbstractProcessor {
             String field = readStringProperty(TYPE, tag, config, "field");
             String targetField = readStringProperty(TYPE, tag, config, "target_field");
 
-            // return new OpniPreProcessor(tag, description, field, targetField);
-            return new OpniPreProcessor(tag, description, field, targetField, nc);
+            return new OpniPreProcessor(tag, description, field, targetField, nc, masker);
         }
     }
 }
