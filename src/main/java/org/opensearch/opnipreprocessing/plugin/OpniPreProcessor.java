@@ -91,7 +91,7 @@ public final class OpniPreProcessor extends AbstractProcessor {
         ingestDocument.setFieldValue(targetField, maskedLog);
         ingestDocument.setFieldValue("lang", "en");
 
-        publistToNats(ingestDocument, nc);
+        publishToNats(ingestDocument, nc);
 
         return ingestDocument;
     }
@@ -101,7 +101,7 @@ public final class OpniPreProcessor extends AbstractProcessor {
         return TYPE;
     }
 
-    private void publistToNats (IngestDocument ingestDocument, Connection nc) throws PrivilegedActionException {
+    private void publishToNats (IngestDocument ingestDocument, Connection nc) throws PrivilegedActionException {
         try {
             AccessController.doPrivileged(new PrivilegedExceptionAction<Void>() {
                 @Override
