@@ -48,13 +48,14 @@ repositories {
     maven { url "https://aws.oss.sonatype.org/content/repositories/snapshots" }
     mavenCentral()
     maven { url "https://plugins.gradle.org/m2/" }
-    // maven { url "https://oss.sonatype.org/content/repositories/snapshots" }
+    maven { url "https://oss.sonatype.org/content/repositories/snapshots" }
 }
 
 dependencies {
     // required for the yaml test to run
     yamlRestTestImplementation 'org.apache.logging.log4j:log4j-core:2.17.0'
-    // implementation 'io.nats:jnats:2.14.1-SNAPSHOT'
+    implementation 'io.nats:jnats:2.14.1-SNAPSHOT' //jnats
+    implementation 'com.google.code.gson:gson:2.8.5' //gson
 }
 
 

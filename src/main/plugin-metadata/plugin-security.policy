@@ -1,0 +1,7 @@
+grant {
+//jnats
+permission java.net.SocketPermission "*", "connect,resolve"; 
+//gson
+permission java.lang.RuntimePermission "accessDeclaredMembers";
+permission java.lang.reflect.ReflectPermission "suppressAccessChecks";
+};

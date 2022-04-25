@@ -17,12 +17,23 @@ import org.opensearch.ingest.Processor;
 import java.io.IOException;
 import java.util.Map;
 import java.util.Random;
+import io.nats.client.Connection;
+import io.nats.client.Nats;
+import io.nats.client.impl.NatsMessage;
+import java.nio.charset.StandardCharsets;
+
 
 import static org.opensearch.ingest.ConfigurationUtils.readBooleanProperty;
 import static org.opensearch.ingest.ConfigurationUtils.readOptionalStringProperty;
 import static org.opensearch.ingest.ConfigurationUtils.readStringProperty;
 
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
 
+import java.security.AccessController;
+import java.security.PrivilegedExceptionAction;
+import java.security.PrivilegedActionException;
+import java.security.PrivilegedAction;
 
 public final class OpniPreProcessor extends AbstractProcessor {
 
@@ -30,12 +41,16 @@ public final class OpniPreProcessor extends AbstractProcessor {
 
     private final String field;
     private final String targetField;
+    private Connection nc;
+    private LogMasker masker;
 
-    public OpniPreProcessor(String tag, String description, String field, String targetField)
+    public OpniPreProcessor(String tag, String description, String field, String targetField, Connection nc, LogMasker masker)
             throws IOException {
         super(tag, description);
         this.field = field;
         this.targetField = targetField;
+        this.nc = nc;
+        this.masker = masker;
     }
 
     public String getSaltString() {
@@ -53,22 +68,28 @@ public final class OpniPreProcessor extends AbstractProcessor {
     @Override
     public IngestDocument execute(IngestDocument ingestDocument) throws Exception {
 
-        String actual_log, masked_log;
+        String actualLog, maskedLog;
+
+        // if !ingestDocument.hasField("log") && ingestDocument.hasField("message"){
+
+        // }
+
         try {
-            actual_log = ingestDocument.getFieldValue(field, String.class);
+            actualLog = ingestDocument.getFieldValue(field, String.class);
         } catch (IllegalArgumentException e) {
             throw e;
         }
-        if (Strings.isEmpty(actual_log)) {
+        if (Strings.isEmpty(actualLog)) {
             return ingestDocument;
         }
 
         String generated_id = getSaltString();
         ingestDocument.setFieldValue("_id", generated_id);
-
-        // logic to mask logs, placeholder for now      
-        masked_log = "masked: " + generated_id + actual_log;
-        ingestDocument.setFieldValue(targetField, masked_log);
+    
+        // maskedLog = maskLogs(actualLog, false);
+        // ingestDocument.setFieldValue(targetField, maskedLog);
+        
+        publishToNats(ingestDocument, nc);
 
         return ingestDocument;
     }
@@ -78,7 +99,36 @@ public final class OpniPreProcessor extends AbstractProcessor {
         return TYPE;
     }
 
+    private void publishToNats (IngestDocument ingestDocument, Connection nc) throws PrivilegedActionException {
+        try {
+            AccessController.doPrivileged(new PrivilegedExceptionAction<Void>() {
+                @Override
+                public Void run() throws Exception {
+                    Gson gson = new Gson();
+                    String payload = gson.toJson(ingestDocument.getSourceAndMetadata());
+                    // String payload = gson.toJson(new NatsDocument(ingestDocument));
+                    nc.publish("sub1", payload.getBytes(StandardCharsets.UTF_8) );
+                    return null;
+                }
+            });
+        } catch (PrivilegedActionException e) {
+            throw e;
+        } 
+    }
+
+    private String maskLogs(String log, boolean isControlPlaneLog) {
+        return masker.mask(log, isControlPlaneLog);
+    }
+
     public static final class Factory implements Processor.Factory {
+   
+        private Connection nc;
+        private LogMasker masker;
+
+        Factory(Connection nc, LogMasker masker){
+            this.nc = nc;
+            this.masker = masker;
+        }
 
         @Override
         public Processor create(Map<String, Processor.Factory> processorFactories, String tag, String description,
@@ -86,7 +136,19 @@ public final class OpniPreProcessor extends AbstractProcessor {
             String field = readStringProperty(TYPE, tag, config, "field");
             String targetField = readStringProperty(TYPE, tag, config, "target_field");
 
-            return new OpniPreProcessor(tag, description, field, targetField);
+            return new OpniPreProcessor(tag, description, field, targetField, nc, masker);
         }
     }
+
+    // private class NatsDocument {
+    //     String _id, log, cluster_id;
+    //     String time; 
+    //     NatsDocument(IngestDocument ingestDocument) {
+    //         _id = ingestDocument.getFieldValue("_id", String.class);
+    //         log = ingestDocument.getFieldValue("log", String.class);
+    //         time = ingestDocument.getFieldValue("time", String.class);
+    //         cluster_id = ingestDocument.getFieldValue("cluster_id", String.class);
+    //         // this.masked_log = ingestDocument.getFieldValue("masked_log", String.class);
+    //     }
+    // }
 }
