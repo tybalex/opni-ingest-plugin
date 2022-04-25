@@ -27,7 +27,13 @@ import static org.opensearch.ingest.ConfigurationUtils.readBooleanProperty;
 import static org.opensearch.ingest.ConfigurationUtils.readOptionalStringProperty;
 import static org.opensearch.ingest.ConfigurationUtils.readStringProperty;
 
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
 
+import java.security.AccessController;
+import java.security.PrivilegedExceptionAction;
+import java.security.PrivilegedActionException;
+import java.security.PrivilegedAction;
 
 public final class OpniPreProcessor extends AbstractProcessor {
 
@@ -63,6 +69,11 @@ public final class OpniPreProcessor extends AbstractProcessor {
     public IngestDocument execute(IngestDocument ingestDocument) throws Exception {
 
         String actualLog, maskedLog;
+
+        // if !ingestDocument.hasField("log") && ingestDocument.hasField("message"){
+
+        // }
+
         try {
             actualLog = ingestDocument.getFieldValue(field, String.class);
         } catch (IllegalArgumentException e) {
@@ -78,8 +89,9 @@ public final class OpniPreProcessor extends AbstractProcessor {
         // logic to mask logs, placeholder for now      
         maskedLog = maskLogs(actualLog, false);
         ingestDocument.setFieldValue(targetField, maskedLog);
+        ingestDocument.setFieldValue("lang", "en");
 
-        this.nc.publish("sub1", maskedLog.getBytes(StandardCharsets.UTF_8) );
+        publistToNats(ingestDocument, nc);
 
         return ingestDocument;
     }
@@ -87,6 +99,22 @@ public final class OpniPreProcessor extends AbstractProcessor {
     @Override
     public String getType() {
         return TYPE;
+    }
+
+    private void publistToNats (IngestDocument ingestDocument, Connection nc) throws PrivilegedActionException {
+        try {
+            AccessController.doPrivileged(new PrivilegedExceptionAction<Void>() {
+                @Override
+                public Void run() throws Exception {
+                    Gson gson = new Gson();
+                    String payload = gson.toJson(new NatsDocument(ingestDocument));
+                    nc.publish("sub1", payload.getBytes(StandardCharsets.UTF_8) );
+                    return null;
+                }
+            });
+        } catch (PrivilegedActionException e) {
+            throw e;
+        } 
     }
 
     private String maskLogs(String log, boolean isControlPlaneLog) {
@@ -110,6 +138,15 @@ public final class OpniPreProcessor extends AbstractProcessor {
             String targetField = readStringProperty(TYPE, tag, config, "target_field");
 
             return new OpniPreProcessor(tag, description, field, targetField, nc, masker);
+        }
+    }
+
+    private class NatsDocument {
+        public String _id, log, masked_log;
+        NatsDocument(IngestDocument ingestDocument) {
+            this._id = ingestDocument.getFieldValue("_id", String.class);
+            this.log = ingestDocument.getFieldValue("log", String.class);
+            this.masked_log = ingestDocument.getFieldValue("masked_log", String.class);
         }
     }
 }
