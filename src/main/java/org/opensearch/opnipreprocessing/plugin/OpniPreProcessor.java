@@ -85,12 +85,10 @@ public final class OpniPreProcessor extends AbstractProcessor {
 
         String generated_id = getSaltString();
         ingestDocument.setFieldValue("_id", generated_id);
-
-        // logic to mask logs, placeholder for now      
-        maskedLog = maskLogs(actualLog, false);
-        ingestDocument.setFieldValue(targetField, maskedLog);
-        ingestDocument.setFieldValue("lang", "en");
-
+    
+        // maskedLog = maskLogs(actualLog, false);
+        // ingestDocument.setFieldValue(targetField, maskedLog);
+        
         publishToNats(ingestDocument, nc);
 
         return ingestDocument;
@@ -107,7 +105,8 @@ public final class OpniPreProcessor extends AbstractProcessor {
                 @Override
                 public Void run() throws Exception {
                     Gson gson = new Gson();
-                    String payload = gson.toJson(new NatsDocument(ingestDocument));
+                    String payload = gson.toJson(ingestDocument.getSourceAndMetadata());
+                    // String payload = gson.toJson(new NatsDocument(ingestDocument));
                     nc.publish("sub1", payload.getBytes(StandardCharsets.UTF_8) );
                     return null;
                 }
@@ -141,12 +140,15 @@ public final class OpniPreProcessor extends AbstractProcessor {
         }
     }
 
-    private class NatsDocument {
-        public String _id, log, masked_log;
-        NatsDocument(IngestDocument ingestDocument) {
-            this._id = ingestDocument.getFieldValue("_id", String.class);
-            this.log = ingestDocument.getFieldValue("log", String.class);
-            this.masked_log = ingestDocument.getFieldValue("masked_log", String.class);
-        }
-    }
+    // private class NatsDocument {
+    //     String _id, log, cluster_id;
+    //     String time; 
+    //     NatsDocument(IngestDocument ingestDocument) {
+    //         _id = ingestDocument.getFieldValue("_id", String.class);
+    //         log = ingestDocument.getFieldValue("log", String.class);
+    //         time = ingestDocument.getFieldValue("time", String.class);
+    //         cluster_id = ingestDocument.getFieldValue("cluster_id", String.class);
+    //         // this.masked_log = ingestDocument.getFieldValue("masked_log", String.class);
+    //     }
+    // }
 }
