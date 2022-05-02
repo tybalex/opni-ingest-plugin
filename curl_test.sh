@@ -25,9 +25,7 @@ sleep 1
 
 curl -XPOST localhost:9200/my_index/_doc \
 -H "Content-Type: application/json" \
--d '{
-    "log": "I0316 12:03:47.578853       1 get.go:259] \"Starting watch\" path=\"/api/v1/namespaces/dgps/secrets\" resourceVersion=\"1035642112\" labels=\"\" fields=\"metadata.name=jenkins-master-token\"\n timeout=\"5m25s\""
-}'
+-d @example.txt
 
 sleep 1
 

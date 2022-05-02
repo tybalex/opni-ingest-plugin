@@ -24,8 +24,8 @@ public class LogMasker {
         masker = new RegexMasker(maskingRuleClass.rules, maskingRuleClass.rulesBeforeSplit);
     }
 
-    public String mask(String content, boolean isControlPlaneLog) {
-    	return masker.mask(content, isControlPlaneLog);
+    public String mask(String content) {
+    	return masker.mask(content);
     }
 
 
@@ -42,9 +42,8 @@ public class LogMasker {
             this.ansiEscape = Pattern.compile("(\\x9B|\\x1B\\[)[0-?]*[ -\\/]*[@-~]");
     	}
 
-    	public String mask(String content, boolean isControlPlaneLog) {
+    	public String mask(String content) {
     		String maskedContent = ansiEscape.matcher(content).replaceAll("");
-    		// if isControlPlaneLog == True // extra log for well structured CP logs
     		for (MaskingRule mi : maskingRulesBeforeSplit) {
                 maskedContent = mi.regexPattern.matcher(maskedContent).replaceAll(mi.maskWithWrap);
     		}
