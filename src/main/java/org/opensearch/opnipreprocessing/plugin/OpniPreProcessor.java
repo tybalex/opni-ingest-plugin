@@ -16,11 +16,13 @@ import org.opensearch.ingest.Processor;
 
 import java.io.IOException;
 import java.util.Map;
+import java.util.HashMap;
 import java.util.Random;
 import io.nats.client.Connection;
 import io.nats.client.Nats;
 import io.nats.client.impl.NatsMessage;
 import java.nio.charset.StandardCharsets;
+import java.sql.Timestamp;
 
 
 import static org.opensearch.ingest.ConfigurationUtils.readBooleanProperty;
@@ -54,7 +56,7 @@ public final class OpniPreProcessor extends AbstractProcessor {
     }
 
     public String getSaltString() {
-        String SALTCHARS = "ABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890";
+        String SALTCHARS = "ABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890abcdefghijklmnopq_";
         StringBuilder salt = new StringBuilder();
         Random rnd = new Random();
         while (salt.length() < 18) { // length of the random string.
@@ -66,58 +68,112 @@ public final class OpniPreProcessor extends AbstractProcessor {
     }
 
     @Override
-    public IngestDocument execute(IngestDocument ingestDocument) throws Exception {
-
-        String actualLog, maskedLog;
-
-        // if !ingestDocument.hasField("log") && ingestDocument.hasField("message"){
-
-        // }
-
-        try {
-            actualLog = ingestDocument.getFieldValue(field, String.class);
-        } catch (IllegalArgumentException e) {
-            throw e;
-        }
-        if (Strings.isEmpty(actualLog)) {
-            return ingestDocument;
-        }
-
-        String generated_id = getSaltString();
-        ingestDocument.setFieldValue("_id", generated_id);
-    
-        // maskedLog = maskLogs(actualLog, false);
-        // ingestDocument.setFieldValue(targetField, maskedLog);
-        
-        publishToNats(ingestDocument, nc);
-
-        return ingestDocument;
-    }
-
-    @Override
     public String getType() {
         return TYPE;
     }
 
-    private void publishToNats (IngestDocument ingestDocument, Connection nc) throws PrivilegedActionException {
+    @Override
+    public IngestDocument execute(IngestDocument ingestDocument) throws Exception {
         try {
-            AccessController.doPrivileged(new PrivilegedExceptionAction<Void>() {
+            return AccessController.doPrivileged(new PrivilegedExceptionAction<IngestDocument>() {
                 @Override
-                public Void run() throws Exception {
-                    Gson gson = new Gson();
-                    String payload = gson.toJson(ingestDocument.getSourceAndMetadata());
-                    // String payload = gson.toJson(new NatsDocument(ingestDocument));
-                    nc.publish("sub1", payload.getBytes(StandardCharsets.UTF_8) );
-                    return null;
+                public IngestDocument run() throws Exception {
+                    String generated_id = getSaltString();
+                    ingestDocument.setFieldValue("_id", generated_id);
+                    preprocessingDocument(ingestDocument);
+                    publishToNats(ingestDocument, nc);
+                    return ingestDocument;
                 }
             });
         } catch (PrivilegedActionException e) {
             throw e;
         } 
+        // this is the entry of document ingestion logic
+        
     }
 
-    private String maskLogs(String log, boolean isControlPlaneLog) {
-        return masker.mask(log, isControlPlaneLog);
+    @SuppressWarnings({"unchecked"})
+    private void preprocessingDocument(IngestDocument ingestDocument) {
+        // take care of field for time
+        if (!ingestDocument.hasField("time")){
+            if (ingestDocument.hasField("timestamp")) {
+                ingestDocument.setFieldValue("time", ingestDocument.getFieldValue("timestamp", String.class));
+                ingestDocument.setFieldValue("raw_ts", "yes");
+            }
+            else {
+                long unixTime = System.currentTimeMillis() ;// / 1000L;
+                ingestDocument.setFieldValue("timestamp", Long.toString(unixTime));
+                ingestDocument.setFieldValue("time", Long.toString(unixTime));
+                ingestDocument.setFieldValue("raw_ts", "no");
+            }
+        }
+        else {
+            ingestDocument.setFieldValue("raw_ts", "raw time");
+        }
+        if (ingestDocument.hasField("timestamp")) {
+            ingestDocument.removeField("timestamp"); 
+        }
+        
+
+        // access nested json
+        // if (ingestDocument.hasField("kubernetes")) {
+        //     Map<String, Object> kubernetes;
+        //     kubernetes = ingestDocument.getFieldValue("kubernetes", Map.class);
+        //     if (kubernetes.containsKey("labels")) {
+        //         ingestDocument.setFieldValue("nested" , ((HashMap)kubernetes.get("labels")).get("app"));
+        //     }
+        // }
+
+        // take care of fields for log
+        String actualLog = "";
+        if (!ingestDocument.hasField("log")) {
+            if (ingestDocument.hasField("message")) {
+                actualLog = ingestDocument.getFieldValue("message", String.class);              
+                ingestDocument.removeField("message");
+                ingestDocument.setFieldValue("log_source_field", "message");
+            }
+            else if (ingestDocument.hasField("MESSAGE")) {
+                actualLog = ingestDocument.getFieldValue("MESSAGE", String.class);
+                ingestDocument.removeField("MESSAGE");
+                ingestDocument.setFieldValue("log_source_field", "MESSAGE");
+            }
+            else {
+                actualLog = "";
+                ingestDocument.setFieldValue("log_source_field", "NONE");
+            }
+        }
+        else {
+            actualLog = ingestDocument.getFieldValue("log", String.class);
+            ingestDocument.setFieldValue("log_source_field", "log");
+        }
+        actualLog = actualLog.trim(); // for java 11+ we should use strip()
+        ingestDocument.setFieldValue("log", actualLog);
+
+        // boolean isControlPlaneLog;
+        // String kubernetesComponent;
+        // if (!ingestDocument.hasField("agent") || ingestDocument.getFieldValue("agent", String.class).equals("support")) {
+        //     isControlPlaneLog = false;
+        //     kubernetesComponent = "";
+        // }
+
+        // if (ingestDocument.hasField("filename")) {
+
+        // }        
+        
+
+        //     // maskedLog = maskLogs(actualLog, false);
+        //     // ingestDocument.setFieldValue(targetField, maskedLog);
+    }
+
+    private void publishToNats (IngestDocument ingestDocument, Connection nc) throws PrivilegedActionException {
+        Gson gson = new Gson();
+        String payload = gson.toJson(ingestDocument.getSourceAndMetadata()); // send everything
+        // String payload = gson.toJson(new NatsDocument(ingestDocument));
+        nc.publish("raw_logs", payload.getBytes(StandardCharsets.UTF_8) );
+    }
+
+    private String maskLogs(String log) {
+        return masker.mask(log);
     }
 
     public static final class Factory implements Processor.Factory {
