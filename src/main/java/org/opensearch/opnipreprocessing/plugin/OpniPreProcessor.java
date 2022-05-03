@@ -110,7 +110,10 @@ public final class OpniPreProcessor extends AbstractProcessor {
         else {
             ingestDocument.setFieldValue("raw_ts", "raw time");
         }
-        // ingestDocument.removeField("timestamp");
+        if (ingestDocument.hasField("timestamp")) {
+            ingestDocument.removeField("timestamp"); 
+        }
+        
 
         // access nested json
         // if (ingestDocument.hasField("kubernetes")) {
