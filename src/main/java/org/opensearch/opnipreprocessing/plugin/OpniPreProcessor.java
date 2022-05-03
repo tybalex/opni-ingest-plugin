@@ -74,6 +74,7 @@ public final class OpniPreProcessor extends AbstractProcessor {
 
     @Override
     public IngestDocument execute(IngestDocument ingestDocument) throws Exception {
+        // main entry of logic of executing each document
         try {
             return AccessController.doPrivileged(new PrivilegedExceptionAction<IngestDocument>() {
                 @Override
@@ -87,13 +88,18 @@ public final class OpniPreProcessor extends AbstractProcessor {
             });
         } catch (PrivilegedActionException e) {
             throw e;
-        } 
-        // this is the entry of document ingestion logic
-        
+        }         
     }
 
     @SuppressWarnings({"unchecked"})
     private void preprocessingDocument(IngestDocument ingestDocument) {
+        /**
+        preprocessing documents:
+        1. normalize time field
+        2. normalize log field
+        3. identify controlplane logs
+        **/
+
         // take care of field for time
         if (!ingestDocument.hasField("time")){
             if (ingestDocument.hasField("timestamp")) {
@@ -113,16 +119,6 @@ public final class OpniPreProcessor extends AbstractProcessor {
         if (ingestDocument.hasField("timestamp")) {
             ingestDocument.removeField("timestamp"); 
         }
-        
-
-        // access nested json
-        // if (ingestDocument.hasField("kubernetes")) {
-        //     Map<String, Object> kubernetes;
-        //     kubernetes = ingestDocument.getFieldValue("kubernetes", Map.class);
-        //     if (kubernetes.containsKey("labels")) {
-        //         ingestDocument.setFieldValue("nested" , ((HashMap)kubernetes.get("labels")).get("app"));
-        //     }
-        // }
 
         // take care of fields for log
         String actualLog = "";
@@ -149,6 +145,15 @@ public final class OpniPreProcessor extends AbstractProcessor {
         actualLog = actualLog.trim(); // for java 11+ we should use strip()
         ingestDocument.setFieldValue("log", actualLog);
 
+        // access nested json
+        // if (ingestDocument.hasField("kubernetes")) {
+        //     Map<String, Object> kubernetes;
+        //     kubernetes = ingestDocument.getFieldValue("kubernetes", Map.class);
+        //     if (kubernetes.containsKey("labels")) {
+        //         ingestDocument.setFieldValue("nested" , ((HashMap)kubernetes.get("labels")).get("app"));
+        //     }
+        // }
+
         // boolean isControlPlaneLog;
         // String kubernetesComponent;
         // if (!ingestDocument.hasField("agent") || ingestDocument.getFieldValue("agent", String.class).equals("support")) {
@@ -166,9 +171,9 @@ public final class OpniPreProcessor extends AbstractProcessor {
     }
 
     private void publishToNats (IngestDocument ingestDocument, Connection nc) throws PrivilegedActionException {
+        // push to nats using gson
         Gson gson = new Gson();
         String payload = gson.toJson(ingestDocument.getSourceAndMetadata()); // send everything
-        // String payload = gson.toJson(new NatsDocument(ingestDocument));
         nc.publish("raw_logs", payload.getBytes(StandardCharsets.UTF_8) );
     }
 
@@ -196,15 +201,4 @@ public final class OpniPreProcessor extends AbstractProcessor {
         }
     }
 
-    // private class NatsDocument {
-    //     String _id, log, cluster_id;
-    //     String time; 
-    //     NatsDocument(IngestDocument ingestDocument) {
-    //         _id = ingestDocument.getFieldValue("_id", String.class);
-    //         log = ingestDocument.getFieldValue("log", String.class);
-    //         time = ingestDocument.getFieldValue("time", String.class);
-    //         cluster_id = ingestDocument.getFieldValue("cluster_id", String.class);
-    //         // this.masked_log = ingestDocument.getFieldValue("masked_log", String.class);
-    //     }
-    // }
 }

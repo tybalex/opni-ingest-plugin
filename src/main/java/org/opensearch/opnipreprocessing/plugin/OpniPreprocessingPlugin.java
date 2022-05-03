@@ -65,7 +65,7 @@ public class OpniPreprocessingPlugin extends Plugin implements IngestPlugin {
 		    return AccessController.doPrivileged(new PrivilegedExceptionAction<Connection>() {
 		        @Override
 		        public Connection run() throws Exception {
-                    return Nats.connect(getNKeyOption()); // "nats://opni-log-anomaly-nats-client.opni-cluster-system.svc:4222"
+                    return Nats.connect(getNKeyOption());
 		        	// return Nats.connect("nats://3.145.37.107:4222"); // TODO replace with nats address from ENV variables
 		        }
 		    });
