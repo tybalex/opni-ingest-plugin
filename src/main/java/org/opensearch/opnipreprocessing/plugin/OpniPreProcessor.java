@@ -100,7 +100,7 @@ public final class OpniPreProcessor extends AbstractProcessor {
         3. identify controlplane logs
         **/
 
-        // take care of field for time
+        // normalize field time
         if (!ingestDocument.hasField("time")){
             if (ingestDocument.hasField("timestamp")) {
                 ingestDocument.setFieldValue("time", ingestDocument.getFieldValue("timestamp", String.class));
@@ -120,8 +120,8 @@ public final class OpniPreProcessor extends AbstractProcessor {
             ingestDocument.removeField("timestamp"); 
         }
 
-        // take care of fields for log
-        String actualLog = "";
+        // normalize field log
+        String actualLog = "NONE";
         if (!ingestDocument.hasField("log")) {
             if (ingestDocument.hasField("message")) {
                 actualLog = ingestDocument.getFieldValue("message", String.class);              
@@ -134,7 +134,6 @@ public final class OpniPreProcessor extends AbstractProcessor {
                 ingestDocument.setFieldValue("log_source_field", "MESSAGE");
             }
             else {
-                actualLog = "";
                 ingestDocument.setFieldValue("log_source_field", "NONE");
             }
         }
@@ -145,29 +144,67 @@ public final class OpniPreProcessor extends AbstractProcessor {
         actualLog = actualLog.trim(); // for java 11+ we should use strip()
         ingestDocument.setFieldValue("log", actualLog);
 
-        // access nested json
-        // if (ingestDocument.hasField("kubernetes")) {
-        //     Map<String, Object> kubernetes;
-        //     kubernetes = ingestDocument.getFieldValue("kubernetes", Map.class);
-        //     if (kubernetes.containsKey("labels")) {
-        //         ingestDocument.setFieldValue("nested" , ((HashMap)kubernetes.get("labels")).get("app"));
-        //     }
-        // }
-
-        // boolean isControlPlaneLog;
-        // String kubernetesComponent;
+        // normalize field log_type and kubernetesComponent conponent
+        boolean isControlPlaneLog = false;
+        String kubernetesComponent = "";
         // if (!ingestDocument.hasField("agent") || ingestDocument.getFieldValue("agent", String.class).equals("support")) {
         //     isControlPlaneLog = false;
         //     kubernetesComponent = "";
         // }
-
-        // if (ingestDocument.hasField("filename")) {
-
-        // }        
         
-
-        //     // maskedLog = maskLogs(actualLog, false);
-        //     // ingestDocument.setFieldValue(targetField, maskedLog);
+        if (ingestDocument.hasField("filename")) {
+            String controlPlaneName = ingestDocument.getFieldValue("filename", String.class);
+            if (controlPlaneName.contains("rke/log/etcd") ||
+                controlPlaneName.contains("rke/log/kubelet") ||
+                controlPlaneName.contains("/rke/log/kube-apiserver") ||
+                controlPlaneName.contains("rke/log/kube-controller-manager") ||
+                controlPlaneName.contains("rke/log/kube-proxy") ||
+                controlPlaneName.contains("rke/log/kube-scheduler") 
+                ) { // `contains` has better performance for simple cases
+                isControlPlaneLog = true;
+                kubernetesComponent = (controlPlaneName.split("_"))[0];
+            }
+            else if (controlPlaneName.contains("k3s.log")){
+                isControlPlaneLog = true;
+                kubernetesComponent = "k3s";
+            }
+            else if (controlPlaneName.contains("rke2/agent/logs/kubelet")){
+                isControlPlaneLog = true;
+                kubernetesComponent = "kubelet";
+            }
+        }  
+        else if (ingestDocument.hasField("COMM")){
+            String controlPlaneName = ingestDocument.getFieldValue("COMM", String.class);
+            if (controlPlaneName.contains("kubelet") ||
+                controlPlaneName.contains("k3s-agent") ||
+                controlPlaneName.contains("k3s-server") ||
+                controlPlaneName.contains("rke2-agent") ||
+                controlPlaneName.contains("rke2-server")
+                ){
+                isControlPlaneLog = true;
+                kubernetesComponent = (controlPlaneName.split("-"))[0];
+            }
+        }
+        else {
+            String controlPlaneName = "";
+            if (ingestDocument.hasField("kubernetes")) {// kubernetes.labels.tier
+                Map<String, Object> kubernetes = ingestDocument.getFieldValue("kubernetes", Map.class);
+                if (kubernetes.containsKey("labels")) {
+                    HashMap<String, String> labels = (HashMap)kubernetes.get("labels");
+                    if (labels.containsKey("tier")) {
+                        controlPlaneName = labels.get("tier");
+                        if (controlPlaneName.contains("control-plane")){
+                            isControlPlaneLog = true;
+                            kubernetesComponent = "control-plane";
+                        }
+                    }
+                }
+            }
+            
+        }      
+        ingestDocument.setFieldValue("is_control_plane_log", isControlPlaneLog);
+        ingestDocument.setFieldValue("kubernetes_component", kubernetesComponent);
+        
     }
 
     private void publishToNats (IngestDocument ingestDocument, Connection nc) throws PrivilegedActionException {
