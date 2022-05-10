@@ -82,7 +82,9 @@ public final class OpniPreProcessor extends AbstractProcessor {
                     String generated_id = getSaltString();
                     ingestDocument.setFieldValue("_id", generated_id);
                     preprocessingDocument(ingestDocument);
-                    publishToNats(ingestDocument, nc);
+                    if (!ingestDocument.getFieldValue("log_type", String.class).equals("workload")) {
+                        publishToNats(ingestDocument, nc);
+                    }
                     return ingestDocument;
                 }
             });
@@ -99,6 +101,9 @@ public final class OpniPreProcessor extends AbstractProcessor {
         2. normalize log field
         3. identify controlplane logs
         **/
+
+        ingestDocument.setFieldValue("drain_pretrained_template_matched", "");
+        ingestDocument.setFieldValue("anomaly_level", "Normal");
 
         // normalize field time
         if (!ingestDocument.hasField("time")){
@@ -145,10 +150,10 @@ public final class OpniPreProcessor extends AbstractProcessor {
         ingestDocument.setFieldValue("log", actualLog);
 
         // normalize field log_type and kubernetesComponent conponent
-        boolean isControlPlaneLog = false;
+        String logType = "workload";
         String kubernetesComponent = "";
         // if (!ingestDocument.hasField("agent") || ingestDocument.getFieldValue("agent", String.class).equals("support")) {
-        //     isControlPlaneLog = false;
+        //     logType = false;
         //     kubernetesComponent = "";
         // }
         
@@ -161,15 +166,15 @@ public final class OpniPreProcessor extends AbstractProcessor {
                 controlPlaneName.contains("rke/log/kube-proxy") ||
                 controlPlaneName.contains("rke/log/kube-scheduler") 
                 ) { // `contains` has better performance for simple cases
-                isControlPlaneLog = true;
+                logType = "controlplane";
                 kubernetesComponent = (controlPlaneName.split("_"))[0];
             }
             else if (controlPlaneName.contains("k3s.log")){
-                isControlPlaneLog = true;
+                logType = "controlplane";
                 kubernetesComponent = "k3s";
             }
             else if (controlPlaneName.contains("rke2/agent/logs/kubelet")){
-                isControlPlaneLog = true;
+                logType = "controlplane";
                 kubernetesComponent = "kubelet";
             }
         }  
@@ -181,28 +186,34 @@ public final class OpniPreProcessor extends AbstractProcessor {
                 controlPlaneName.contains("rke2-agent") ||
                 controlPlaneName.contains("rke2-server")
                 ){
-                isControlPlaneLog = true;
+                logType = "controlplane";
                 kubernetesComponent = (controlPlaneName.split("-"))[0];
             }
         }
         else {
-            String controlPlaneName = "";
             if (ingestDocument.hasField("kubernetes")) {// kubernetes.labels.tier
                 Map<String, Object> kubernetes = ingestDocument.getFieldValue("kubernetes", Map.class);
                 if (kubernetes.containsKey("labels")) {
                     HashMap<String, String> labels = (HashMap)kubernetes.get("labels");
                     if (labels.containsKey("tier")) {
-                        controlPlaneName = labels.get("tier");
+                        String controlPlaneName = labels.get("tier");
                         if (controlPlaneName.contains("control-plane")){
-                            isControlPlaneLog = true;
+                            logType = "controlplane";
                             kubernetesComponent = "control-plane";
                         }
                     }
                 }
+                if (kubernetes.containsKey("container_image") && ((String)kubernetes.get("container_image")).contains("rancher/rancher") &&
+                    ingestDocument.hasField("deployment") && ingestDocument.getFieldValue("deployment", String.class).equals("rancher") &&
+                    ingestDocument.hasField("service") && ingestDocument.getFieldValue("service", String.class).equals("rancher")  ) {
+                    logType = "rancher";
+                }
             }
             
-        }      
-        ingestDocument.setFieldValue("is_control_plane_log", isControlPlaneLog);
+        }  
+
+
+        ingestDocument.setFieldValue("log_type", logType);
         ingestDocument.setFieldValue("kubernetes_component", kubernetesComponent);
         
     }
