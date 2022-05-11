@@ -23,6 +23,7 @@ import io.nats.client.Nats;
 import io.nats.client.impl.NatsMessage;
 import java.nio.charset.StandardCharsets;
 import java.sql.Timestamp;
+import java.nio.file.Paths;
 
 
 import static org.opensearch.ingest.ConfigurationUtils.readBooleanProperty;
@@ -167,6 +168,7 @@ public final class OpniPreProcessor extends AbstractProcessor {
                 controlPlaneName.contains("rke/log/kube-scheduler") 
                 ) { // `contains` has better performance for simple cases
                 logType = "controlplane";
+                controlPlaneName = Paths.get(controlPlaneName).getFileName().toString();
                 kubernetesComponent = (controlPlaneName.split("_"))[0];
             }
             else if (controlPlaneName.contains("k3s.log")){
