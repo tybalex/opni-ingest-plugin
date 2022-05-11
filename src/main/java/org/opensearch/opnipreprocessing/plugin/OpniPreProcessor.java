@@ -13,17 +13,19 @@ import org.opensearch.common.unit.ByteSizeValue;
 import org.opensearch.ingest.AbstractProcessor;
 import org.opensearch.ingest.IngestDocument;
 import org.opensearch.ingest.Processor;
+import org.opensearch.common.SuppressForbidden;
 
 import java.io.IOException;
 import java.util.Map;
 import java.util.HashMap;
-import java.util.Random;
+import java.io.File;
 import io.nats.client.Connection;
 import io.nats.client.Nats;
 import io.nats.client.impl.NatsMessage;
 import java.nio.charset.StandardCharsets;
 import java.sql.Timestamp;
-import java.nio.file.Paths;
+import java.util.UUID;
+import org.opensearch.common.io.PathUtils;
 
 
 import static org.opensearch.ingest.ConfigurationUtils.readBooleanProperty;
@@ -38,6 +40,36 @@ import java.security.PrivilegedExceptionAction;
 import java.security.PrivilegedActionException;
 import java.security.PrivilegedAction;
 
+import org.opensearch.OpenSearchException;
+import org.opensearch.ingest.Processor;
+import org.opensearch.plugins.IngestPlugin;
+import org.opensearch.plugins.Plugin;
+import org.opensearch.common.SuppressForbidden;
+
+import io.nats.client.Connection;
+import io.nats.client.Nats;
+import io.nats.client.impl.NatsMessage;
+import io.nats.client.NKey;
+import io.nats.client.Options;
+import io.nats.client.AuthHandler;
+
+import java.nio.file.Files;
+import org.opensearch.common.io.PathUtils;
+import java.nio.file.Path;
+import java.nio.file.FileSystem;
+import java.nio.charset.StandardCharsets;
+
+
+import java.io.IOException;
+import java.security.GeneralSecurityException;
+import java.lang.NullPointerException;
+
+import java.security.AccessController;
+import java.security.PrivilegedExceptionAction;
+import java.security.PrivilegedActionException;
+import java.security.PrivilegedAction;
+
+
 public final class OpniPreProcessor extends AbstractProcessor {
 
     public static final String TYPE = "opnipre";
@@ -46,31 +78,19 @@ public final class OpniPreProcessor extends AbstractProcessor {
     private final String targetField;
     private Connection nc;
     private LogMasker masker;
+    private static final String natsEndpoint = "nats://opni-log-anomaly-nats-client.opni-cluster-system.svc:4222";
 
-    public OpniPreProcessor(String tag, String description, String field, String targetField, Connection nc, LogMasker masker)
-            throws IOException {
+    public OpniPreProcessor(String tag, String description, String field, String targetField)
+            throws IOException, PrivilegedActionException {
         super(tag, description);
         this.field = field;
         this.targetField = targetField;
-        this.nc = nc;
-        this.masker = masker;
-    }
-
-    public String getSaltString() {
-        String SALTCHARS = "ABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890abcdefghijklmnopq_";
-        StringBuilder salt = new StringBuilder();
-        Random rnd = new Random();
-        while (salt.length() < 18) { // length of the random string.
-            int index = (int) (rnd.nextFloat() * SALTCHARS.length());
-            salt.append(SALTCHARS.charAt(index));
+        try{
+            nc = connectNats();
+        }catch (PrivilegedActionException e) {
+            throw e;
         }
-        String saltStr = salt.toString();
-        return saltStr;
-    }
-
-    @Override
-    public String getType() {
-        return TYPE;
+        masker = new LogMasker();
     }
 
     @Override
@@ -80,7 +100,7 @@ public final class OpniPreProcessor extends AbstractProcessor {
             return AccessController.doPrivileged(new PrivilegedExceptionAction<IngestDocument>() {
                 @Override
                 public IngestDocument run() throws Exception {
-                    String generated_id = getSaltString();
+                    String generated_id = getRandomID();
                     ingestDocument.setFieldValue("_id", generated_id);
                     preprocessingDocument(ingestDocument);
                     if (!ingestDocument.getFieldValue("log_type", String.class).equals("workload")) {
@@ -94,13 +114,76 @@ public final class OpniPreProcessor extends AbstractProcessor {
         }         
     }
 
-    @SuppressWarnings({"unchecked"})
+    public String getRandomID() {
+        return UUID.randomUUID().toString();
+    }
+
+    @Override
+    public String getType() {
+        return TYPE;
+    }
+
+    private Connection connectNats() throws PrivilegedActionException {
+        /***
+        this method assigns privilege to create a nats connection. 
+        ***/
+        try {
+            return AccessController.doPrivileged(new PrivilegedExceptionAction<Connection>() {
+                @Override
+                public Connection run() throws Exception {
+                    return Nats.connect(getNKeyOption());
+                    // return Nats.connect("nats://3.145.37.107:4222"); // TODO replace with nats address from ENV variables
+                }
+            });
+        } catch (PrivilegedActionException e) {
+            throw e;
+        }
+    }
+
+    @SuppressForbidden(reason = "Not config the seed file as env variable for now")
+    private Options getNKeyOption() throws GeneralSecurityException, IOException, NullPointerException{
+        String nkeySeedFileName = System.getenv("NKEY_SEED_FILENAME");
+        if (nkeySeedFileName == null) {
+            nkeySeedFileName = "/etc/nkey/seed";
+        }
+        char[] seed = new String(Files.readAllBytes(PathUtils.get(nkeySeedFileName)), StandardCharsets.UTF_8).toCharArray();
+        NKey theNKey = NKey.fromSeed(seed);
+        Options options = new Options.Builder().
+                    server(natsEndpoint).
+                    authHandler(new AuthHandler(){
+                        public char[] getID() {
+                            try {
+                                return theNKey.getPublicKey();
+                            } catch (GeneralSecurityException|IOException|NullPointerException ex) {
+                                return null;
+                            }
+                        }
+
+                        public byte[] sign(byte[] nonce) {
+                            try {
+                                return theNKey.sign(nonce);
+                            } catch (GeneralSecurityException|IOException|NullPointerException ex) {
+                                return null;
+                            }
+                        }
+
+                        public char[] getJWT() {
+                            return null;
+                        }
+                    }).
+                    build();
+        return options;
+    }
+
+    // @SuppressWarnings({"unchecked"})
+    @SuppressForbidden(reason = "only use PathUtil to get filename")
     private void preprocessingDocument(IngestDocument ingestDocument) {
         /**
         preprocessing documents:
+        0. initialize a few fields for downstream AI services.
         1. normalize time field
         2. normalize log field
-        3. identify controlplane logs
+        3. identify controlplane/rancher logs
         **/
 
         ingestDocument.setFieldValue("drain_pretrained_template_matched", "");
@@ -168,7 +251,8 @@ public final class OpniPreProcessor extends AbstractProcessor {
                 controlPlaneName.contains("rke/log/kube-scheduler") 
                 ) { // `contains` has better performance for simple cases
                 logType = "controlplane";
-                controlPlaneName = Paths.get(controlPlaneName).getFileName().toString();
+                controlPlaneName = PathUtils.get(controlPlaneName).getFileName().toString();
+                // using File().getName: lesslikely but might be buggy for cross-platform path?
                 kubernetesComponent = (controlPlaneName.split("_"))[0];
             }
             else if (controlPlaneName.contains("k3s.log")){
@@ -210,10 +294,8 @@ public final class OpniPreProcessor extends AbstractProcessor {
                     ingestDocument.hasField("service") && ingestDocument.getFieldValue("service", String.class).equals("rancher")  ) {
                     logType = "rancher";
                 }
-            }
-            
+            }        
         }  
-
 
         ingestDocument.setFieldValue("log_type", logType);
         ingestDocument.setFieldValue("kubernetes_component", kubernetesComponent);
@@ -232,14 +314,6 @@ public final class OpniPreProcessor extends AbstractProcessor {
     }
 
     public static final class Factory implements Processor.Factory {
-   
-        private Connection nc;
-        private LogMasker masker;
-
-        Factory(Connection nc, LogMasker masker){
-            this.nc = nc;
-            this.masker = masker;
-        }
 
         @Override
         public Processor create(Map<String, Processor.Factory> processorFactories, String tag, String description,
@@ -247,8 +321,10 @@ public final class OpniPreProcessor extends AbstractProcessor {
             String field = readStringProperty(TYPE, tag, config, "field");
             String targetField = readStringProperty(TYPE, tag, config, "target_field");
 
-            return new OpniPreProcessor(tag, description, field, targetField, nc, masker);
+            return new OpniPreProcessor(tag, description, field, targetField);
         }
+
+
     }
 
 }
