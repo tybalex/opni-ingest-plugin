@@ -18,6 +18,7 @@ import org.opensearch.common.SuppressForbidden;
 import java.io.IOException;
 import java.util.Map;
 import java.util.HashMap;
+import java.util.Date;
 import java.io.File;
 import io.nats.client.Connection;
 import io.nats.client.Nats;
@@ -188,6 +189,8 @@ public final class OpniPreProcessor extends AbstractProcessor {
 
         ingestDocument.setFieldValue("drain_pretrained_template_matched", "");
         ingestDocument.setFieldValue("anomaly_level", "Normal");
+        long unixTime = System.currentTimeMillis();
+        ingestDocument.setFieldValue("ingest_at", ((Date)new Timestamp(unixTime)).toString());
 
         // normalize field time
         if (!ingestDocument.hasField("time")){
@@ -196,8 +199,6 @@ public final class OpniPreProcessor extends AbstractProcessor {
                 ingestDocument.setFieldValue("raw_ts", "yes");
             }
             else {
-                long unixTime = System.currentTimeMillis() ;// / 1000L;
-                ingestDocument.setFieldValue("timestamp", Long.toString(unixTime));
                 ingestDocument.setFieldValue("time", Long.toString(unixTime));
                 ingestDocument.setFieldValue("raw_ts", "no");
             }
