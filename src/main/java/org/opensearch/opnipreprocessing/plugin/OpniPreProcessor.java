@@ -87,7 +87,7 @@ public final class OpniPreProcessor extends AbstractProcessor {
 
     @Override
     public IngestDocument execute(IngestDocument ingestDocument) throws Exception {
-        // main entry of logic of executing each document
+        // main entry
         try {
             return AccessController.doPrivileged(new PrivilegedExceptionAction<IngestDocument>() {
                 @Override
@@ -177,13 +177,12 @@ public final class OpniPreProcessor extends AbstractProcessor {
         2. normalize log field
         3. identify controlplane/rancher logs
         **/
-
         ingestDocument.setFieldValue("drain_pretrained_template_matched", "");
         ingestDocument.setFieldValue("anomaly_level", "Normal");
         long unixTime = System.currentTimeMillis();
         ingestDocument.setFieldValue("ingest_at", ((Date)new Timestamp(unixTime)).toString());
 
-        // normalize field time
+        // normalize field `time`
         if (!ingestDocument.hasField("time")){
             if (ingestDocument.hasField("timestamp")) {
                 ingestDocument.setFieldValue("time", ingestDocument.getFieldValue("timestamp", String.class));
@@ -201,7 +200,7 @@ public final class OpniPreProcessor extends AbstractProcessor {
             ingestDocument.removeField("timestamp"); 
         }
 
-        // normalize field log
+        // normalize field `log`
         String actualLog = "NONE";
         if (!ingestDocument.hasField("log")) {
             if (ingestDocument.hasField("message")) {
@@ -222,7 +221,7 @@ public final class OpniPreProcessor extends AbstractProcessor {
             actualLog = ingestDocument.getFieldValue("log", String.class);
             ingestDocument.setFieldValue("log_source_field", "log");
         }
-        actualLog = actualLog.trim(); // for java 11+ we should use strip()
+        actualLog = actualLog.trim();
         ingestDocument.setFieldValue("log", actualLog);
 
         // normalize field log_type and kubernetesComponent conponent
@@ -241,10 +240,9 @@ public final class OpniPreProcessor extends AbstractProcessor {
                 controlPlaneName.contains("rke/log/kube-controller-manager") ||
                 controlPlaneName.contains("rke/log/kube-proxy") ||
                 controlPlaneName.contains("rke/log/kube-scheduler") 
-                ) { // `contains` has better performance for simple cases
+                ) { 
                 logType = "controlplane";
                 controlPlaneName = PathUtils.get(controlPlaneName).getFileName().toString();
-                // using File().getName: lesslikely but might be buggy for cross-platform path?
                 kubernetesComponent = (controlPlaneName.split("_"))[0];
             }
             else if (controlPlaneName.contains("k3s.log")){
@@ -288,16 +286,13 @@ public final class OpniPreProcessor extends AbstractProcessor {
                 }
             }        
         }  
-
         ingestDocument.setFieldValue("log_type", logType);
         ingestDocument.setFieldValue("kubernetes_component", kubernetesComponent);
-        
     }
 
     private void publishToNats (IngestDocument ingestDocument, Connection nc) throws PrivilegedActionException {
-        // push to nats using gson
         Gson gson = new Gson();
-        String payload = gson.toJson(ingestDocument.getSourceAndMetadata()); // send everything
+        String payload = gson.toJson(ingestDocument.getSourceAndMetadata());
         nc.publish("raw_logs", payload.getBytes(StandardCharsets.UTF_8) );
     }
 
@@ -306,7 +301,6 @@ public final class OpniPreProcessor extends AbstractProcessor {
     }
 
     public static final class Factory implements Processor.Factory {
-
         @Override
         public Processor create(Map<String, Processor.Factory> processorFactories, String tag, String description,
                                 Map<String, Object> config) throws Exception {
@@ -315,8 +309,5 @@ public final class OpniPreProcessor extends AbstractProcessor {
 
             return new OpniPreProcessor(tag, description, field, targetField);
         }
-
-
     }
-
 }

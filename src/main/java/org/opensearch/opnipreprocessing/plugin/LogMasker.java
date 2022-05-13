@@ -49,7 +49,7 @@ public class LogMasker {
                 maskedContent = mi.regexPattern.matcher(maskedContent).replaceAll(mi.maskWithWrap);
             }
 
-            maskedContent = String.join(" ", maskedContent.split("((?==|\\||:)|(?<==|\\||:))")); //jave has issue
+            maskedContent = String.join(" ", maskedContent.split("((?==|\\||:)|(?<==|\\||:))"));
             maskedContent = String.join(" ", maskedContent.split("[\n\r\t\r]"));
 
             for (MaskingRule mi : maskingRules) {
@@ -58,7 +58,7 @@ public class LogMasker {
 
             List<String> splitContext = Arrays.asList(maskedContent.split(delimiters));
 
-            maskedContent = String.join(" " , splitContext.stream().filter(s -> !removeDelimiters.contains(s)).collect(Collectors.toList()));// TODO removeDlimiters.contains???
+            maskedContent = String.join(" " , splitContext.stream().filter(s -> !removeDelimiters.contains(s)).collect(Collectors.toList()));
 
             maskedContent = maskedContent.toLowerCase(Locale.ENGLISH);
             return maskedContent;

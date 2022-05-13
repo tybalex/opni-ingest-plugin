@@ -20,10 +20,8 @@ import org.opensearch.common.SuppressForbidden;
 import java.nio.file.FileSystem;
 
 
-
 public class OpniPreprocessingPlugin extends Plugin implements IngestPlugin {
 
-    
     public OpniPreprocessingPlugin() {
 
     }
@@ -33,6 +31,5 @@ public class OpniPreprocessingPlugin extends Plugin implements IngestPlugin {
 
         return Collections.singletonMap(OpniPreProcessor.TYPE, new OpniPreProcessor.Factory());
     }
-    
 
 }
