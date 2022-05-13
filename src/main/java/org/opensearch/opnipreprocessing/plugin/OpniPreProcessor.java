@@ -19,7 +19,6 @@ import java.io.IOException;
 import java.util.Map;
 import java.util.HashMap;
 import java.util.Date;
-import java.io.File;
 import io.nats.client.Connection;
 import io.nats.client.Nats;
 import io.nats.client.impl.NatsMessage;
@@ -55,20 +54,12 @@ import io.nats.client.Options;
 import io.nats.client.AuthHandler;
 
 import java.nio.file.Files;
-import org.opensearch.common.io.PathUtils;
-import java.nio.file.Path;
 import java.nio.file.FileSystem;
-import java.nio.charset.StandardCharsets;
 
 
 import java.io.IOException;
 import java.security.GeneralSecurityException;
 import java.lang.NullPointerException;
-
-import java.security.AccessController;
-import java.security.PrivilegedExceptionAction;
-import java.security.PrivilegedActionException;
-import java.security.PrivilegedAction;
 
 
 public final class OpniPreProcessor extends AbstractProcessor {
@@ -133,7 +124,7 @@ public final class OpniPreProcessor extends AbstractProcessor {
                 @Override
                 public Connection run() throws Exception {
                     return Nats.connect(getNKeyOption());
-                    // return Nats.connect("nats://3.145.37.107:4222"); // TODO replace with nats address from ENV variables
+                    // return Nats.connect("nats://x.x.x.x:4222"); // test only
                 }
             });
         } catch (PrivilegedActionException e) {
