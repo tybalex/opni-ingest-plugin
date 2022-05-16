@@ -13,16 +13,19 @@ import org.opensearch.common.unit.ByteSizeValue;
 import org.opensearch.ingest.AbstractProcessor;
 import org.opensearch.ingest.IngestDocument;
 import org.opensearch.ingest.Processor;
+import org.opensearch.common.SuppressForbidden;
 
 import java.io.IOException;
 import java.util.Map;
 import java.util.HashMap;
-import java.util.Random;
+import java.util.Date;
 import io.nats.client.Connection;
 import io.nats.client.Nats;
 import io.nats.client.impl.NatsMessage;
 import java.nio.charset.StandardCharsets;
 import java.sql.Timestamp;
+import java.util.UUID;
+import org.opensearch.common.io.PathUtils;
 
 
 import static org.opensearch.ingest.ConfigurationUtils.readBooleanProperty;
@@ -37,6 +40,28 @@ import java.security.PrivilegedExceptionAction;
 import java.security.PrivilegedActionException;
 import java.security.PrivilegedAction;
 
+import org.opensearch.OpenSearchException;
+import org.opensearch.ingest.Processor;
+import org.opensearch.plugins.IngestPlugin;
+import org.opensearch.plugins.Plugin;
+import org.opensearch.common.SuppressForbidden;
+
+import io.nats.client.Connection;
+import io.nats.client.Nats;
+import io.nats.client.impl.NatsMessage;
+import io.nats.client.NKey;
+import io.nats.client.Options;
+import io.nats.client.AuthHandler;
+
+import java.nio.file.Files;
+import java.nio.file.FileSystem;
+
+
+import java.io.IOException;
+import java.security.GeneralSecurityException;
+import java.lang.NullPointerException;
+
+
 public final class OpniPreProcessor extends AbstractProcessor {
 
     public static final String TYPE = "opnipre";
@@ -45,26 +70,44 @@ public final class OpniPreProcessor extends AbstractProcessor {
     private final String targetField;
     private Connection nc;
     private LogMasker masker;
+    private static final String natsEndpoint = "nats://opni-log-anomaly-nats-client.opni-cluster-system.svc:4222";
 
-    public OpniPreProcessor(String tag, String description, String field, String targetField, Connection nc, LogMasker masker)
-            throws IOException {
+    public OpniPreProcessor(String tag, String description, String field, String targetField)
+            throws IOException, PrivilegedActionException {
         super(tag, description);
         this.field = field;
         this.targetField = targetField;
-        this.nc = nc;
-        this.masker = masker;
+        try{
+            nc = connectNats();
+        }catch (PrivilegedActionException e) {
+            throw e;
+        }
+        masker = new LogMasker();
     }
 
-    public String getSaltString() {
-        String SALTCHARS = "ABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890abcdefghijklmnopq_";
-        StringBuilder salt = new StringBuilder();
-        Random rnd = new Random();
-        while (salt.length() < 18) { // length of the random string.
-            int index = (int) (rnd.nextFloat() * SALTCHARS.length());
-            salt.append(SALTCHARS.charAt(index));
-        }
-        String saltStr = salt.toString();
-        return saltStr;
+    @Override
+    public IngestDocument execute(IngestDocument ingestDocument) throws Exception {
+        // main entry
+        try {
+            return AccessController.doPrivileged(new PrivilegedExceptionAction<IngestDocument>() {
+                @Override
+                public IngestDocument run() throws Exception {
+                    String generated_id = getRandomID();
+                    ingestDocument.setFieldValue("_id", generated_id);
+                    preprocessingDocument(ingestDocument);
+                    if (!ingestDocument.getFieldValue("log_type", String.class).equals("workload")) {
+                        publishToNats(ingestDocument, nc);
+                    }
+                    return ingestDocument;
+                }
+            });
+        } catch (PrivilegedActionException e) {
+            throw e;
+        }         
+    }
+
+    public String getRandomID() {
+        return UUID.randomUUID().toString();
     }
 
     @Override
@@ -72,37 +115,80 @@ public final class OpniPreProcessor extends AbstractProcessor {
         return TYPE;
     }
 
-    @Override
-    public IngestDocument execute(IngestDocument ingestDocument) throws Exception {
+    private Connection connectNats() throws PrivilegedActionException {
+        /***
+        this method assigns privilege to create a nats connection. 
+        ***/
         try {
-            return AccessController.doPrivileged(new PrivilegedExceptionAction<IngestDocument>() {
+            return AccessController.doPrivileged(new PrivilegedExceptionAction<Connection>() {
                 @Override
-                public IngestDocument run() throws Exception {
-                    String generated_id = getSaltString();
-                    ingestDocument.setFieldValue("_id", generated_id);
-                    preprocessingDocument(ingestDocument);
-                    publishToNats(ingestDocument, nc);
-                    return ingestDocument;
+                public Connection run() throws Exception {
+                    return Nats.connect(getNKeyOption());
+                    // return Nats.connect("nats://x.x.x.x:4222"); // test only
                 }
             });
         } catch (PrivilegedActionException e) {
             throw e;
-        } 
-        // this is the entry of document ingestion logic
-        
+        }
     }
 
-    @SuppressWarnings({"unchecked"})
+    @SuppressForbidden(reason = "Not config the seed file as env variable for now")
+    private Options getNKeyOption() throws GeneralSecurityException, IOException, NullPointerException{
+        String nkeySeedFileName = System.getenv("NKEY_SEED_FILENAME");
+        if (nkeySeedFileName == null) {
+            nkeySeedFileName = "/etc/nkey/seed";
+        }
+        char[] seed = new String(Files.readAllBytes(PathUtils.get(nkeySeedFileName)), StandardCharsets.UTF_8).toCharArray();
+        NKey theNKey = NKey.fromSeed(seed);
+        Options options = new Options.Builder().
+                    server(natsEndpoint).
+                    authHandler(new AuthHandler(){
+                        public char[] getID() {
+                            try {
+                                return theNKey.getPublicKey();
+                            } catch (GeneralSecurityException|IOException|NullPointerException ex) {
+                                return null;
+                            }
+                        }
+
+                        public byte[] sign(byte[] nonce) {
+                            try {
+                                return theNKey.sign(nonce);
+                            } catch (GeneralSecurityException|IOException|NullPointerException ex) {
+                                return null;
+                            }
+                        }
+
+                        public char[] getJWT() {
+                            return null;
+                        }
+                    }).
+                    build();
+        return options;
+    }
+
+    // @SuppressWarnings({"unchecked"})
+    @SuppressForbidden(reason = "only use PathUtil to get filename")
     private void preprocessingDocument(IngestDocument ingestDocument) {
-        // take care of field for time
+        /**
+        preprocessing documents:
+        0. initialize a few fields for downstream AI services.
+        1. normalize time field
+        2. normalize log field
+        3. identify controlplane/rancher logs
+        **/
+        ingestDocument.setFieldValue("drain_pretrained_template_matched", "");
+        ingestDocument.setFieldValue("anomaly_level", "Normal");
+        long unixTime = System.currentTimeMillis();
+        ingestDocument.setFieldValue("ingest_at", ((Date)new Timestamp(unixTime)).toString());
+
+        // normalize field `time`
         if (!ingestDocument.hasField("time")){
             if (ingestDocument.hasField("timestamp")) {
                 ingestDocument.setFieldValue("time", ingestDocument.getFieldValue("timestamp", String.class));
                 ingestDocument.setFieldValue("raw_ts", "yes");
             }
             else {
-                long unixTime = System.currentTimeMillis() ;// / 1000L;
-                ingestDocument.setFieldValue("timestamp", Long.toString(unixTime));
                 ingestDocument.setFieldValue("time", Long.toString(unixTime));
                 ingestDocument.setFieldValue("raw_ts", "no");
             }
@@ -113,19 +199,9 @@ public final class OpniPreProcessor extends AbstractProcessor {
         if (ingestDocument.hasField("timestamp")) {
             ingestDocument.removeField("timestamp"); 
         }
-        
 
-        // access nested json
-        // if (ingestDocument.hasField("kubernetes")) {
-        //     Map<String, Object> kubernetes;
-        //     kubernetes = ingestDocument.getFieldValue("kubernetes", Map.class);
-        //     if (kubernetes.containsKey("labels")) {
-        //         ingestDocument.setFieldValue("nested" , ((HashMap)kubernetes.get("labels")).get("app"));
-        //     }
-        // }
-
-        // take care of fields for log
-        String actualLog = "";
+        // normalize field `log`
+        String actualLog = "NONE";
         if (!ingestDocument.hasField("log")) {
             if (ingestDocument.hasField("message")) {
                 actualLog = ingestDocument.getFieldValue("message", String.class);              
@@ -138,7 +214,6 @@ public final class OpniPreProcessor extends AbstractProcessor {
                 ingestDocument.setFieldValue("log_source_field", "MESSAGE");
             }
             else {
-                actualLog = "";
                 ingestDocument.setFieldValue("log_source_field", "NONE");
             }
         }
@@ -146,29 +221,78 @@ public final class OpniPreProcessor extends AbstractProcessor {
             actualLog = ingestDocument.getFieldValue("log", String.class);
             ingestDocument.setFieldValue("log_source_field", "log");
         }
-        actualLog = actualLog.trim(); // for java 11+ we should use strip()
+        actualLog = actualLog.trim();
         ingestDocument.setFieldValue("log", actualLog);
 
-        // boolean isControlPlaneLog;
-        // String kubernetesComponent;
+        // normalize field log_type and kubernetesComponent conponent
+        String logType = "workload";
+        String kubernetesComponent = "";
         // if (!ingestDocument.hasField("agent") || ingestDocument.getFieldValue("agent", String.class).equals("support")) {
-        //     isControlPlaneLog = false;
+        //     logType = false;
         //     kubernetesComponent = "";
         // }
-
-        // if (ingestDocument.hasField("filename")) {
-
-        // }        
         
-
-        //     // maskedLog = maskLogs(actualLog, false);
-        //     // ingestDocument.setFieldValue(targetField, maskedLog);
+        if (ingestDocument.hasField("filename")) {
+            String controlPlaneName = ingestDocument.getFieldValue("filename", String.class);
+            if (controlPlaneName.contains("rke/log/etcd") ||
+                controlPlaneName.contains("rke/log/kubelet") ||
+                controlPlaneName.contains("/rke/log/kube-apiserver") ||
+                controlPlaneName.contains("rke/log/kube-controller-manager") ||
+                controlPlaneName.contains("rke/log/kube-proxy") ||
+                controlPlaneName.contains("rke/log/kube-scheduler") 
+                ) { 
+                logType = "controlplane";
+                controlPlaneName = PathUtils.get(controlPlaneName).getFileName().toString();
+                kubernetesComponent = (controlPlaneName.split("_"))[0];
+            }
+            else if (controlPlaneName.contains("k3s.log")){
+                logType = "controlplane";
+                kubernetesComponent = "k3s";
+            }
+            else if (controlPlaneName.contains("rke2/agent/logs/kubelet")){
+                logType = "controlplane";
+                kubernetesComponent = "kubelet";
+            }
+        }  
+        else if (ingestDocument.hasField("COMM")){
+            String controlPlaneName = ingestDocument.getFieldValue("COMM", String.class);
+            if (controlPlaneName.contains("kubelet") ||
+                controlPlaneName.contains("k3s-agent") ||
+                controlPlaneName.contains("k3s-server") ||
+                controlPlaneName.contains("rke2-agent") ||
+                controlPlaneName.contains("rke2-server")
+                ){
+                logType = "controlplane";
+                kubernetesComponent = (controlPlaneName.split("-"))[0];
+            }
+        }
+        else {
+            if (ingestDocument.hasField("kubernetes")) {// kubernetes.labels.tier
+                Map<String, Object> kubernetes = ingestDocument.getFieldValue("kubernetes", Map.class);
+                if (kubernetes.containsKey("labels")) {
+                    HashMap<String, String> labels = (HashMap)kubernetes.get("labels");
+                    if (labels.containsKey("tier")) {
+                        String controlPlaneName = labels.get("tier");
+                        if (controlPlaneName.contains("control-plane")){
+                            logType = "controlplane";
+                            kubernetesComponent = "control-plane";
+                        }
+                    }
+                }
+                if (kubernetes.containsKey("container_image") && ((String)kubernetes.get("container_image")).contains("rancher/rancher") &&
+                    ingestDocument.hasField("deployment") && ingestDocument.getFieldValue("deployment", String.class).equals("rancher") &&
+                    ingestDocument.hasField("service") && ingestDocument.getFieldValue("service", String.class).equals("rancher")  ) {
+                    logType = "rancher";
+                }
+            }        
+        }  
+        ingestDocument.setFieldValue("log_type", logType);
+        ingestDocument.setFieldValue("kubernetes_component", kubernetesComponent);
     }
 
     private void publishToNats (IngestDocument ingestDocument, Connection nc) throws PrivilegedActionException {
         Gson gson = new Gson();
-        String payload = gson.toJson(ingestDocument.getSourceAndMetadata()); // send everything
-        // String payload = gson.toJson(new NatsDocument(ingestDocument));
+        String payload = gson.toJson(ingestDocument.getSourceAndMetadata());
         nc.publish("raw_logs", payload.getBytes(StandardCharsets.UTF_8) );
     }
 
@@ -177,34 +301,13 @@ public final class OpniPreProcessor extends AbstractProcessor {
     }
 
     public static final class Factory implements Processor.Factory {
-   
-        private Connection nc;
-        private LogMasker masker;
-
-        Factory(Connection nc, LogMasker masker){
-            this.nc = nc;
-            this.masker = masker;
-        }
-
         @Override
         public Processor create(Map<String, Processor.Factory> processorFactories, String tag, String description,
                                 Map<String, Object> config) throws Exception {
             String field = readStringProperty(TYPE, tag, config, "field");
             String targetField = readStringProperty(TYPE, tag, config, "target_field");
 
-            return new OpniPreProcessor(tag, description, field, targetField, nc, masker);
+            return new OpniPreProcessor(tag, description, field, targetField);
         }
     }
-
-    // private class NatsDocument {
-    //     String _id, log, cluster_id;
-    //     String time; 
-    //     NatsDocument(IngestDocument ingestDocument) {
-    //         _id = ingestDocument.getFieldValue("_id", String.class);
-    //         log = ingestDocument.getFieldValue("log", String.class);
-    //         time = ingestDocument.getFieldValue("time", String.class);
-    //         cluster_id = ingestDocument.getFieldValue("cluster_id", String.class);
-    //         // this.masked_log = ingestDocument.getFieldValue("masked_log", String.class);
-    //     }
-    // }
 }

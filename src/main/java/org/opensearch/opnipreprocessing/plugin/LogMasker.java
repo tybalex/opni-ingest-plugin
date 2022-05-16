@@ -13,11 +13,12 @@ import java.util.stream.Collectors;
 import java.util.List;
 import java.util.Arrays;
 import java.util.ArrayList;
+import java.util.Locale;
 
 public class LogMasker {
 
-	private final MaskingRuleClass maskingRuleClass;
-	public RegexMasker masker;
+    private final MaskingRuleClass maskingRuleClass;
+    public RegexMasker masker;
     
     public LogMasker() {
         maskingRuleClass = new MaskingRuleClass();
@@ -25,7 +26,7 @@ public class LogMasker {
     }
 
     public String mask(String content) {
-    	return masker.mask(content);
+        return masker.mask(content);
     }
 
 
@@ -34,34 +35,34 @@ public class LogMasker {
         List<MaskingRule> maskingRules, maskingRulesBeforeSplit;
         String delimiters, removeDelimiters;
         Pattern ansiEscape;
-    	public RegexMasker(List<MaskingRule> maskingRules, List<MaskingRule> maskingRulesBeforeSplit ) {
-    		this.maskingRules = maskingRules;
-    		this.maskingRulesBeforeSplit = maskingRulesBeforeSplit;
+        public RegexMasker(List<MaskingRule> maskingRules, List<MaskingRule> maskingRulesBeforeSplit ) {
+            this.maskingRules = maskingRules;
+            this.maskingRulesBeforeSplit = maskingRulesBeforeSplit;
             this.delimiters = "([|:| \\(|\\)|\\[|\\]\'|\\{|\\}|\"|,|=])";
             this.removeDelimiters = "([| \\(|\\)|\\[|\\]\'|\\{|\\}|\"|,])";
             this.ansiEscape = Pattern.compile("(\\x9B|\\x1B\\[)[0-?]*[ -\\/]*[@-~]");
-    	}
+        }
 
-    	public String mask(String content) {
-    		String maskedContent = ansiEscape.matcher(content).replaceAll("");
-    		for (MaskingRule mi : maskingRulesBeforeSplit) {
+        public String mask(String content) {
+            String maskedContent = ansiEscape.matcher(content).replaceAll("");
+            for (MaskingRule mi : maskingRulesBeforeSplit) {
                 maskedContent = mi.regexPattern.matcher(maskedContent).replaceAll(mi.maskWithWrap);
-    		}
+            }
 
-            maskedContent = String.join(" ", maskedContent.split("((?==|\\||:)|(?<==|\\||:))")); //jave has issue
+            maskedContent = String.join(" ", maskedContent.split("((?==|\\||:)|(?<==|\\||:))"));
             maskedContent = String.join(" ", maskedContent.split("[\n\r\t\r]"));
 
             for (MaskingRule mi : maskingRules) {
                 maskedContent = mi.regexPattern.matcher(maskedContent).replaceAll(mi.maskWithWrap);
-    		}
+            }
 
-    		List<String> splitContext = Arrays.asList(maskedContent.split(delimiters));
+            List<String> splitContext = Arrays.asList(maskedContent.split(delimiters));
 
-            maskedContent = String.join(" " , splitContext.stream().filter(s -> !removeDelimiters.contains(s)).collect(Collectors.toList()));// TODO removeDlimiters.contains???
+            maskedContent = String.join(" " , splitContext.stream().filter(s -> !removeDelimiters.contains(s)).collect(Collectors.toList()));
 
-    		maskedContent = maskedContent.toLowerCase();
-    		return maskedContent;
-    	}
+            maskedContent = maskedContent.toLowerCase(Locale.ENGLISH);
+            return maskedContent;
+        }
     }
     public class MaskingRuleClass {
         List<MaskingRule> rules = new ArrayList<>();
