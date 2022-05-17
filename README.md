@@ -41,6 +41,31 @@ this command runs all the tests
 ./gradlew updateSHAs
 ```
 
+### Install the pipeline in Opensearch
+``` create the pipeline
+PUT _ingest/pipeline/opni-ingest-pipeline
+{
+    "processors": [
+        {
+            "opnipre": {
+                "field": "log",
+                "target_field": "masked_log"
+            }
+        }
+    ]
+}
+```
+``` attached the pipeline to an index
+PUT /logs/_settings
+{
+ "settings": {
+      "index.default_pipeline": "opni-ingest-pipeline"
+  }
+}
+```
+Similarly you can also attach the pipeline to an index_template.
+
+
 ## License
 This code is licensed under the Apache 2.0 License. See [LICENSE.txt](LICENSE.txt).
 
