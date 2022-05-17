@@ -8,7 +8,7 @@
 
 `build/distributions/opnipreprocessing.zip` is generated.
 
-2. Install OpenSearch and build a local artifact for the integration tests and build tools ([Learn more here](https://github.com/opensearch-project/opensearch-plugins/blob/main/BUILDING.md)):
+2. (For Dev): Install OpenSearch and build a local artifact for the integration tests and build tools ([Learn more here](https://github.com/opensearch-project/opensearch-plugins/blob/main/BUILDING.md)):
 
 ``` 
 git clone https://github.com/opensearch-project/OpenSearch.git
@@ -42,7 +42,8 @@ this command runs all the tests
 ```
 
 ### Install the pipeline in Opensearch
-``` create the pipeline
+create the pipeline
+``` 
 PUT _ingest/pipeline/opni-ingest-pipeline
 {
     "processors": [
@@ -55,7 +56,8 @@ PUT _ingest/pipeline/opni-ingest-pipeline
     ]
 }
 ```
-``` attached the pipeline to an index
+attached the pipeline to an index
+``` 
 PUT /logs/_settings
 {
  "settings": {
