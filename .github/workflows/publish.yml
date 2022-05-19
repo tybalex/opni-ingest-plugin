@@ -23,7 +23,7 @@ jobs:
     - name: Build and Run Tests
       run: |
           ./gradlew build
-    - uses: actions/checkout@v3
+    - uses: actions/upload-artifact@v3
       with:
         path: build/distributions/opnipreprocessing.zip
         name: preprocessing-plugin
