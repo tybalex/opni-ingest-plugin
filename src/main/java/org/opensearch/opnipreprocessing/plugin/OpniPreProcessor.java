@@ -14,6 +14,10 @@ import org.opensearch.ingest.AbstractProcessor;
 import org.opensearch.ingest.IngestDocument;
 import org.opensearch.ingest.Processor;
 import org.opensearch.common.SuppressForbidden;
+import org.opensearch.common.settings.Setting;
+import org.opensearch.common.settings.Setting.Property;
+import org.opensearch.common.settings.Settings;
+import org.opensearch.env.Environment;
 
 import java.io.IOException;
 import java.util.Map;
@@ -23,6 +27,7 @@ import io.nats.client.Connection;
 import io.nats.client.Nats;
 import io.nats.client.impl.NatsMessage;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Path;
 import java.sql.Timestamp;
 import java.util.UUID;
 import org.opensearch.common.io.PathUtils;
@@ -70,13 +75,33 @@ public final class OpniPreProcessor extends AbstractProcessor {
     private final String targetField;
     private Connection nc;
     private LogMasker masker;
-    private static final String natsEndpoint = "nats://opni-log-anomaly-nats-client.opni-cluster-system.svc:4222";
 
-    public OpniPreProcessor(String tag, String description, String field, String targetField)
+    static final Setting.Setting<String> ENDPOINT_SETTING = Setting.simpleString("nats.endpoint", Property.NodeScope);
+    static final Setting.Setting<String> SEED_FILE_SETTING = Setting.simpleString("nats.seed_file", Property.NodeScope);
+
+    private final String natsEndpoint;
+    private final String seedFile;
+
+    public OpniPreProcessor(final Environment env, String tag, String description, String field, String targetField)
             throws IOException, PrivilegedActionException {
         super(tag, description);
         this.field = field;
         this.targetField = targetField;
+
+        final Path configDir = env.configDir();
+        final Path settingsYaml = configDir.resolve("preprocessing/settings.yml");
+
+        final Settings pluginSettings;
+        try {
+            pluginSettings = Settings.builder().loadFromPath(settingsYaml).build();
+            assert pluginSettings != null;
+        } catch (IOException e) {
+            throw new OpenSearchException("failed to load settings", e);
+        }
+
+        this.natsEndpoint = ENDPOINT_SETTING.get(pluginSettings);
+        this.seedFile = SEED_FILE_SETTING.get(pluginSettings);
+
         try{
             nc = connectNats();
         }catch (PrivilegedActionException e) {
@@ -134,11 +159,7 @@ public final class OpniPreProcessor extends AbstractProcessor {
 
     @SuppressForbidden(reason = "Not config the seed file as env variable for now")
     private Options getNKeyOption() throws GeneralSecurityException, IOException, NullPointerException{
-        String nkeySeedFileName = System.getenv("NKEY_SEED_FILENAME");
-        if (nkeySeedFileName == null) {
-            nkeySeedFileName = "/etc/nkey/seed";
-        }
-        char[] seed = new String(Files.readAllBytes(PathUtils.get(nkeySeedFileName)), StandardCharsets.UTF_8).toCharArray();
+        char[] seed = new String(Files.readAllBytes(PathUtils.get(seedFile)), StandardCharsets.UTF_8).toCharArray();
         NKey theNKey = NKey.fromSeed(seed);
         Options options = new Options.Builder().
                     server(natsEndpoint).
@@ -307,7 +328,7 @@ public final class OpniPreProcessor extends AbstractProcessor {
             String field = readStringProperty(TYPE, tag, config, "field");
             String targetField = readStringProperty(TYPE, tag, config, "target_field");
 
-            return new OpniPreProcessor(tag, description, field, targetField);
+            return new OpniPreProcessor(this.Parameters.env, tag, description, field, targetField);
         }
     }
 }
