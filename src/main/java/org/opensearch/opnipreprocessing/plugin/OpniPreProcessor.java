@@ -76,8 +76,8 @@ public final class OpniPreProcessor extends AbstractProcessor {
     private Connection nc;
     private LogMasker masker;
 
-    static final Setting.Setting<String> ENDPOINT_SETTING = Setting.simpleString("nats.endpoint", Property.NodeScope);
-    static final Setting.Setting<String> SEED_FILE_SETTING = Setting.simpleString("nats.seed_file", Property.NodeScope);
+    static final Setting<String> ENDPOINT_SETTING = Setting.simpleString("nats.endpoint", Property.NodeScope);
+    static final Setting<String> SEED_FILE_SETTING = Setting.simpleString("nats.seed_file", Property.NodeScope);
 
     private final String natsEndpoint;
     private final String seedFile;
@@ -328,7 +328,7 @@ public final class OpniPreProcessor extends AbstractProcessor {
             String field = readStringProperty(TYPE, tag, config, "field");
             String targetField = readStringProperty(TYPE, tag, config, "target_field");
 
-            return new OpniPreProcessor(this.Parameters.env, tag, description, field, targetField);
+            return new OpniPreProcessor(Parameters.env, tag, description, field, targetField);
         }
     }
 }
