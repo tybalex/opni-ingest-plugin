@@ -14,6 +14,10 @@ import org.opensearch.ingest.AbstractProcessor;
 import org.opensearch.ingest.IngestDocument;
 import org.opensearch.ingest.Processor;
 import org.opensearch.common.SuppressForbidden;
+import org.opensearch.common.settings.Setting;
+import org.opensearch.common.settings.Setting.Property;
+import org.opensearch.common.settings.Settings;
+import org.opensearch.env.Environment;
 
 import java.io.IOException;
 import java.util.Map;
@@ -68,15 +72,17 @@ public final class OpniPreProcessor extends AbstractProcessor {
 
     private final String field;
     private final String targetField;
+    private final OpniPreprocessingConfig config;
     private Connection nc;
     private LogMasker masker;
-    private static final String natsEndpoint = "nats://opni-log-anomaly-nats-client.opni-cluster-system.svc:4222";
 
-    public OpniPreProcessor(String tag, String description, String field, String targetField)
+    public OpniPreProcessor(String tag, String description, String field, String targetField, OpniPreprocessingConfig config)
             throws IOException, PrivilegedActionException {
         super(tag, description);
         this.field = field;
         this.targetField = targetField;
+        this.config = config;
+
         try{
             nc = connectNats();
         }catch (PrivilegedActionException e) {
@@ -134,14 +140,10 @@ public final class OpniPreProcessor extends AbstractProcessor {
 
     @SuppressForbidden(reason = "Not config the seed file as env variable for now")
     private Options getNKeyOption() throws GeneralSecurityException, IOException, NullPointerException{
-        String nkeySeedFileName = System.getenv("NKEY_SEED_FILENAME");
-        if (nkeySeedFileName == null) {
-            nkeySeedFileName = "/etc/nkey/seed";
-        }
-        char[] seed = new String(Files.readAllBytes(PathUtils.get(nkeySeedFileName)), StandardCharsets.UTF_8).toCharArray();
+        char[] seed = new String(Files.readAllBytes(PathUtils.get(config.getSeedFile())), StandardCharsets.UTF_8).toCharArray();
         NKey theNKey = NKey.fromSeed(seed);
         Options options = new Options.Builder().
-                    server(natsEndpoint).
+                    server(config.getNatsEndpoint()).
                     authHandler(new AuthHandler(){
                         public char[] getID() {
                             try {
@@ -301,13 +303,21 @@ public final class OpniPreProcessor extends AbstractProcessor {
     }
 
     public static final class Factory implements Processor.Factory {
+        private final Environment env;
+
+        public Factory(Environment env) {
+            this.env = env;
+        }
+
         @Override
         public Processor create(Map<String, Processor.Factory> processorFactories, String tag, String description,
                                 Map<String, Object> config) throws Exception {
             String field = readStringProperty(TYPE, tag, config, "field");
             String targetField = readStringProperty(TYPE, tag, config, "target_field");
 
-            return new OpniPreProcessor(tag, description, field, targetField);
+            OpniPreprocessingConfig pluginConfig = new OpniPreprocessingConfig(env);
+
+            return new OpniPreProcessor(tag, description, field, targetField, pluginConfig);
         }
     }
 }
