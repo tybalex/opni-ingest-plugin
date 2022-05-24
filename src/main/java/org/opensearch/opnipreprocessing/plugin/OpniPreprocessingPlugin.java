@@ -29,7 +29,7 @@ public class OpniPreprocessingPlugin extends Plugin implements IngestPlugin {
     @Override
     public Map<String, Processor.Factory> getProcessors(Processor.Parameters parameters) {
 
-        return Collections.singletonMap(OpniPreProcessor.TYPE, new OpniPreProcessor.Factory());
+        return Collections.singletonMap(OpniPreProcessor.TYPE, new OpniPreProcessor.Factory(parameters.env));
     }
 
 }

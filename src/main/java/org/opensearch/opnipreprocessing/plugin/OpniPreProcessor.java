@@ -73,34 +73,16 @@ public final class OpniPreProcessor extends AbstractProcessor {
 
     private final String field;
     private final String targetField;
+    private final OpniPreprocessingConfig config;
     private Connection nc;
     private LogMasker masker;
 
-    static final Setting<String> ENDPOINT_SETTING = Setting.simpleString("nats.endpoint", Property.NodeScope);
-    static final Setting<String> SEED_FILE_SETTING = Setting.simpleString("nats.seed_file", Property.NodeScope);
-
-    private final String natsEndpoint;
-    private final String seedFile;
-
-    public OpniPreProcessor(final Environment env, String tag, String description, String field, String targetField)
+    public OpniPreProcessor(String tag, String description, String field, String targetField, OpniPreprocessingConfig config)
             throws IOException, PrivilegedActionException {
         super(tag, description);
         this.field = field;
         this.targetField = targetField;
-
-        final Path configDir = env.configDir();
-        final Path settingsYaml = configDir.resolve("preprocessing/settings.yml");
-
-        final Settings pluginSettings;
-        try {
-            pluginSettings = Settings.builder().loadFromPath(settingsYaml).build();
-            assert pluginSettings != null;
-        } catch (IOException e) {
-            throw new OpenSearchException("failed to load settings", e);
-        }
-
-        this.natsEndpoint = ENDPOINT_SETTING.get(pluginSettings);
-        this.seedFile = SEED_FILE_SETTING.get(pluginSettings);
+        this.config = config;
 
         try{
             nc = connectNats();
@@ -159,10 +141,10 @@ public final class OpniPreProcessor extends AbstractProcessor {
 
     @SuppressForbidden(reason = "Not config the seed file as env variable for now")
     private Options getNKeyOption() throws GeneralSecurityException, IOException, NullPointerException{
-        char[] seed = new String(Files.readAllBytes(PathUtils.get(seedFile)), StandardCharsets.UTF_8).toCharArray();
+        char[] seed = new String(Files.readAllBytes(PathUtils.get(config.getSeedFile())), StandardCharsets.UTF_8).toCharArray();
         NKey theNKey = NKey.fromSeed(seed);
         Options options = new Options.Builder().
-                    server(natsEndpoint).
+                    server(config.getNatsEndpoint()).
                     authHandler(new AuthHandler(){
                         public char[] getID() {
                             try {
@@ -322,13 +304,21 @@ public final class OpniPreProcessor extends AbstractProcessor {
     }
 
     public static final class Factory implements Processor.Factory {
+        private final Environment env
+
+        public Factory(Environment env) {
+            this.env = env
+        }
+
         @Override
         public Processor create(Map<String, Processor.Factory> processorFactories, String tag, String description,
                                 Map<String, Object> config) throws Exception {
             String field = readStringProperty(TYPE, tag, config, "field");
             String targetField = readStringProperty(TYPE, tag, config, "target_field");
 
-            return new OpniPreProcessor(Parameters.env, tag, description, field, targetField);
+            OpniPreprocessingConfig config = new OpniPreprocessingConfig(env)
+
+            return new OpniPreProcessor(tag, description, field, targetField, config);
         }
     }
 }
