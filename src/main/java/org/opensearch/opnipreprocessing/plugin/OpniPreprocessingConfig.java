@@ -13,12 +13,12 @@ import java.nio.file.Path;
 
 public class OpniPreprocessingConfig {
     static final Setting<String> ENDPOINT_SETTING = Setting.simpleString("nats.endpoint", Property.NodeScope);
-    static final Setting<String> SEED_FILE_SETTING = Setting.simpleString("nats.seed_file", Property.NodeScope);
+    static final Setting<String> SEED_FILE_SETTING = Setting.simpleString("nats.seed_file", "/etc/nkey", value -> {}, Property.NodeScope);
 
     private final String natsEndpoint;
     private final String seedFile;
 
-    public OpniPreprocessingConfig(final Environment env) {
+    public OpniPreprocessingConfig(Environment env) {
         final Path configDir = env.configDir();
         final Path settingsYaml = configDir.resolve("preprocessing/settings.yml");
 
