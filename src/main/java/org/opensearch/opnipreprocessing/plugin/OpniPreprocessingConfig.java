@@ -9,6 +9,7 @@ import org.opensearch.common.settings.Settings;
 import org.opensearch.env.Environment;
 
 import java.io.IOException;
+import java.nio.file.Path;
 
 public class OpniPreprocessingConfig {
     static final Setting<String> ENDPOINT_SETTING = Setting.simpleString("nats.endpoint", Property.NodeScope);

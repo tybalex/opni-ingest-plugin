@@ -27,7 +27,6 @@ import io.nats.client.Connection;
 import io.nats.client.Nats;
 import io.nats.client.impl.NatsMessage;
 import java.nio.charset.StandardCharsets;
-import java.nio.file.Path;
 import java.sql.Timestamp;
 import java.util.UUID;
 import org.opensearch.common.io.PathUtils;
