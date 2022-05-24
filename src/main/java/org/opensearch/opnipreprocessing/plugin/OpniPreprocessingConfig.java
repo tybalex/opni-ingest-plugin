@@ -21,7 +21,7 @@ import java.nio.file.Path;
 
 public class OpniPreprocessingConfig {
     static final Setting<String> ENDPOINT_SETTING = Setting.simpleString("nats.endpoint", Property.NodeScope);
-    static final Setting<String> SEED_FILE_SETTING = Setting.simpleString("nats.seed_file", "/etc/nkey", value -> {}, Property.NodeScope);
+    static final Setting<String> SEED_FILE_SETTING = Setting.simpleString("nats.seed_file", "/etc/nkey/seed", value -> {}, Property.NodeScope);
 
     private final String natsEndpoint;
     private final String seedFile;
