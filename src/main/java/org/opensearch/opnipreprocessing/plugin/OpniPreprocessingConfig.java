@@ -18,8 +18,9 @@ public class OpniPreprocessingConfig {
     private final String natsEndpoint;
     private final String seedFile;
 
-    public OpniPreprocessingConfig(Environment env) {
-        final Path configDir = env.configDir();
+    public OpniPreprocessingConfig(final Environment env) {
+        // In a later version of Opensearch this method is renamed configDir
+        final Path configDir = env.configFile();
         final Path settingsYaml = configDir.resolve("preprocessing/settings.yml");
 
         final Settings pluginSettings;
