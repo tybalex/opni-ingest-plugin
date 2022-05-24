@@ -304,10 +304,10 @@ public final class OpniPreProcessor extends AbstractProcessor {
     }
 
     public static final class Factory implements Processor.Factory {
-        private final Environment env
+        private final Environment env;
 
         public Factory(Environment env) {
-            this.env = env
+            this.env = env;
         }
 
         @Override
@@ -316,7 +316,7 @@ public final class OpniPreProcessor extends AbstractProcessor {
             String field = readStringProperty(TYPE, tag, config, "field");
             String targetField = readStringProperty(TYPE, tag, config, "target_field");
 
-            OpniPreprocessingConfig config = new OpniPreprocessingConfig(env)
+            OpniPreprocessingConfig config = new OpniPreprocessingConfig(env);
 
             return new OpniPreProcessor(tag, description, field, targetField, config);
         }
