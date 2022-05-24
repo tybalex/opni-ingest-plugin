@@ -315,9 +315,9 @@ public final class OpniPreProcessor extends AbstractProcessor {
             String field = readStringProperty(TYPE, tag, config, "field");
             String targetField = readStringProperty(TYPE, tag, config, "target_field");
 
-            OpniPreprocessingConfig config = new OpniPreprocessingConfig(env);
+            OpniPreprocessingConfig pluginConfig = new OpniPreprocessingConfig(env);
 
-            return new OpniPreProcessor(tag, description, field, targetField, config);
+            return new OpniPreProcessor(tag, description, field, targetField, pluginConfig);
         }
     }
 }
