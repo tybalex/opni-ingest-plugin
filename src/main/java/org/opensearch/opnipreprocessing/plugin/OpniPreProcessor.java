@@ -227,13 +227,14 @@ public final class OpniPreProcessor extends AbstractProcessor {
         actualLog = actualLog.trim();
         ingestDocument.setFieldValue("log", actualLog);
 
+        // Don't do any further processing if the logs come from the support agent
+        if (ingestDocument.hasField("agent") && ingestDocument.getFieldValue("agent", String.class).equals("support")) {
+            return;
+        }
+
         // normalize field log_type and kubernetesComponent conponent
         String logType = "workload";
         String kubernetesComponent = "";
-        // if (!ingestDocument.hasField("agent") || ingestDocument.getFieldValue("agent", String.class).equals("support")) {
-        //     logType = false;
-        //     kubernetesComponent = "";
-        // }
         
         if (ingestDocument.hasField("filename")) {
             String controlPlaneName = ingestDocument.getFieldValue("filename", String.class);
