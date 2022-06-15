@@ -66,6 +66,7 @@ import java.security.GeneralSecurityException;
 import java.lang.NullPointerException;
 
 
+
 public final class OpniPreProcessor extends AbstractProcessor {
 
     public static final String TYPE = "opnipre";
@@ -293,9 +294,12 @@ public final class OpniPreProcessor extends AbstractProcessor {
     }
 
     private void publishToNats (IngestDocument ingestDocument, Connection nc) throws PrivilegedActionException {
-        Gson gson = new Gson();
-        String payload = gson.toJson(ingestDocument.getSourceAndMetadata());
-        nc.publish("raw_logs", payload.getBytes(StandardCharsets.UTF_8) );
+        OpniPayloadProto.Payload payload = OpniPayloadProto.Payload.newBuilder()
+                  .setId(ingestDocument.getFieldValue("_id", String.class))
+                  .setClusterId(ingestDocument.getFieldValue("cluster_id", String.class))
+                  .setLog(ingestDocument.getFieldValue("log", String.class))
+                  .setLogType(ingestDocument.getFieldValue("log_type", String.class)).build();
+        nc.publish("raw_logs", payload.toByteArray() );
     }
 
     private String maskLogs(String log) {
@@ -316,7 +320,7 @@ public final class OpniPreProcessor extends AbstractProcessor {
             String targetField = readStringProperty(TYPE, tag, config, "target_field");
 
             OpniPreprocessingConfig pluginConfig = new OpniPreprocessingConfig(env);
-
+            // OpniPreprocessingConfig pluginConfig = null;
             return new OpniPreProcessor(tag, description, field, targetField, pluginConfig);
         }
     }

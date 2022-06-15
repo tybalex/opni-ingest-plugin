@@ -56,8 +56,9 @@ dependencies {
     implementation 'io.nats:jnats:2.14.1-SNAPSHOT' //jnats
     implementation 'net.i2p.crypto:eddsa:0.3.0' //nkey
     implementation 'com.google.code.gson:gson:2.9.0' //gson
-    // https://mavenlibs.com/maven/dependency/com.github.wnameless/json-flattener
-    // implementation 'com.github.wnameless:json-flattener:0.7.1'
+    // https://mvnrepository.com/artifact/com.google.protobuf/protobuf-java
+    implementation 'com.google.protobuf:protobuf-java:3.21.1'
+
 }
 
 
