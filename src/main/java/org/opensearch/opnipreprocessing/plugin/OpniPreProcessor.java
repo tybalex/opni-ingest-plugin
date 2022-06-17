@@ -36,9 +36,6 @@ import static org.opensearch.ingest.ConfigurationUtils.readBooleanProperty;
 import static org.opensearch.ingest.ConfigurationUtils.readOptionalStringProperty;
 import static org.opensearch.ingest.ConfigurationUtils.readStringProperty;
 
-import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
-
 import java.security.AccessController;
 import java.security.PrivilegedExceptionAction;
 import java.security.PrivilegedActionException;
