@@ -79,27 +79,32 @@ public final class OpniPayloadProto {
         getLogTypeBytes();
 
     /**
-     * <code>string drain_pretrained_template_matched = 7;</code>
+     * <code>string template_matched = 7;</code>
      */
-    java.lang.String getDrainPretrainedTemplateMatched();
+    java.lang.String getTemplateMatched();
     /**
-     * <code>string drain_pretrained_template_matched = 7;</code>
+     * <code>string template_matched = 7;</code>
      */
     com.google.protobuf.ByteString
-        getDrainPretrainedTemplateMatchedBytes();
+        getTemplateMatchedBytes();
 
     /**
-     * <code>string inference_model = 8;</code>
+     * <code>int64 template_cluster_id = 8;</code>
+     */
+    long getTemplateClusterId();
+
+    /**
+     * <code>string inference_model = 9;</code>
      */
     java.lang.String getInferenceModel();
     /**
-     * <code>string inference_model = 8;</code>
+     * <code>string inference_model = 9;</code>
      */
     com.google.protobuf.ByteString
         getInferenceModelBytes();
 
     /**
-     * <code>float opnilog_confidence = 9;</code>
+     * <code>float opnilog_confidence = 10;</code>
      */
     float getOpnilogConfidence();
   }
@@ -122,7 +127,7 @@ public final class OpniPayloadProto {
       maskedLog_ = "";
       anomalyLevel_ = "";
       logType_ = "";
-      drainPretrainedTemplateMatched_ = "";
+      templateMatched_ = "";
       inferenceModel_ = "";
     }
 
@@ -189,16 +194,21 @@ public final class OpniPayloadProto {
             case 58: {
               java.lang.String s = input.readStringRequireUtf8();
 
-              drainPretrainedTemplateMatched_ = s;
+              templateMatched_ = s;
               break;
             }
-            case 66: {
+            case 64: {
+
+              templateClusterId_ = input.readInt64();
+              break;
+            }
+            case 74: {
               java.lang.String s = input.readStringRequireUtf8();
 
               inferenceModel_ = s;
               break;
             }
-            case 77: {
+            case 85: {
 
               opnilogConfidence_ = input.readFloat();
               break;
@@ -439,44 +449,53 @@ public final class OpniPayloadProto {
       }
     }
 
-    public static final int DRAIN_PRETRAINED_TEMPLATE_MATCHED_FIELD_NUMBER = 7;
-    private volatile java.lang.Object drainPretrainedTemplateMatched_;
+    public static final int TEMPLATE_MATCHED_FIELD_NUMBER = 7;
+    private volatile java.lang.Object templateMatched_;
     /**
-     * <code>string drain_pretrained_template_matched = 7;</code>
+     * <code>string template_matched = 7;</code>
      */
-    public java.lang.String getDrainPretrainedTemplateMatched() {
-      java.lang.Object ref = drainPretrainedTemplateMatched_;
+    public java.lang.String getTemplateMatched() {
+      java.lang.Object ref = templateMatched_;
       if (ref instanceof java.lang.String) {
         return (java.lang.String) ref;
       } else {
         com.google.protobuf.ByteString bs = 
             (com.google.protobuf.ByteString) ref;
         java.lang.String s = bs.toStringUtf8();
-        drainPretrainedTemplateMatched_ = s;
+        templateMatched_ = s;
         return s;
       }
     }
     /**
-     * <code>string drain_pretrained_template_matched = 7;</code>
+     * <code>string template_matched = 7;</code>
      */
     public com.google.protobuf.ByteString
-        getDrainPretrainedTemplateMatchedBytes() {
-      java.lang.Object ref = drainPretrainedTemplateMatched_;
+        getTemplateMatchedBytes() {
+      java.lang.Object ref = templateMatched_;
       if (ref instanceof java.lang.String) {
         com.google.protobuf.ByteString b = 
             com.google.protobuf.ByteString.copyFromUtf8(
                 (java.lang.String) ref);
-        drainPretrainedTemplateMatched_ = b;
+        templateMatched_ = b;
         return b;
       } else {
         return (com.google.protobuf.ByteString) ref;
       }
     }
 
-    public static final int INFERENCE_MODEL_FIELD_NUMBER = 8;
+    public static final int TEMPLATE_CLUSTER_ID_FIELD_NUMBER = 8;
+    private long templateClusterId_;
+    /**
+     * <code>int64 template_cluster_id = 8;</code>
+     */
+    public long getTemplateClusterId() {
+      return templateClusterId_;
+    }
+
+    public static final int INFERENCE_MODEL_FIELD_NUMBER = 9;
     private volatile java.lang.Object inferenceModel_;
     /**
-     * <code>string inference_model = 8;</code>
+     * <code>string inference_model = 9;</code>
      */
     public java.lang.String getInferenceModel() {
       java.lang.Object ref = inferenceModel_;
@@ -491,7 +510,7 @@ public final class OpniPayloadProto {
       }
     }
     /**
-     * <code>string inference_model = 8;</code>
+     * <code>string inference_model = 9;</code>
      */
     public com.google.protobuf.ByteString
         getInferenceModelBytes() {
@@ -507,10 +526,10 @@ public final class OpniPayloadProto {
       }
     }
 
-    public static final int OPNILOG_CONFIDENCE_FIELD_NUMBER = 9;
+    public static final int OPNILOG_CONFIDENCE_FIELD_NUMBER = 10;
     private float opnilogConfidence_;
     /**
-     * <code>float opnilog_confidence = 9;</code>
+     * <code>float opnilog_confidence = 10;</code>
      */
     public float getOpnilogConfidence() {
       return opnilogConfidence_;
@@ -548,14 +567,17 @@ public final class OpniPayloadProto {
       if (!getLogTypeBytes().isEmpty()) {
         com.google.protobuf.GeneratedMessageV3.writeString(output, 6, logType_);
       }
-      if (!getDrainPretrainedTemplateMatchedBytes().isEmpty()) {
-        com.google.protobuf.GeneratedMessageV3.writeString(output, 7, drainPretrainedTemplateMatched_);
+      if (!getTemplateMatchedBytes().isEmpty()) {
+        com.google.protobuf.GeneratedMessageV3.writeString(output, 7, templateMatched_);
+      }
+      if (templateClusterId_ != 0L) {
+        output.writeInt64(8, templateClusterId_);
       }
       if (!getInferenceModelBytes().isEmpty()) {
-        com.google.protobuf.GeneratedMessageV3.writeString(output, 8, inferenceModel_);
+        com.google.protobuf.GeneratedMessageV3.writeString(output, 9, inferenceModel_);
       }
       if (opnilogConfidence_ != 0F) {
-        output.writeFloat(9, opnilogConfidence_);
+        output.writeFloat(10, opnilogConfidence_);
       }
       unknownFields.writeTo(output);
     }
@@ -584,15 +606,19 @@ public final class OpniPayloadProto {
       if (!getLogTypeBytes().isEmpty()) {
         size += com.google.protobuf.GeneratedMessageV3.computeStringSize(6, logType_);
       }
-      if (!getDrainPretrainedTemplateMatchedBytes().isEmpty()) {
-        size += com.google.protobuf.GeneratedMessageV3.computeStringSize(7, drainPretrainedTemplateMatched_);
+      if (!getTemplateMatchedBytes().isEmpty()) {
+        size += com.google.protobuf.GeneratedMessageV3.computeStringSize(7, templateMatched_);
+      }
+      if (templateClusterId_ != 0L) {
+        size += com.google.protobuf.CodedOutputStream
+          .computeInt64Size(8, templateClusterId_);
       }
       if (!getInferenceModelBytes().isEmpty()) {
-        size += com.google.protobuf.GeneratedMessageV3.computeStringSize(8, inferenceModel_);
+        size += com.google.protobuf.GeneratedMessageV3.computeStringSize(9, inferenceModel_);
       }
       if (opnilogConfidence_ != 0F) {
         size += com.google.protobuf.CodedOutputStream
-          .computeFloatSize(9, opnilogConfidence_);
+          .computeFloatSize(10, opnilogConfidence_);
       }
       size += unknownFields.getSerializedSize();
       memoizedSize = size;
@@ -621,8 +647,10 @@ public final class OpniPayloadProto {
           .equals(other.getAnomalyLevel())) return false;
       if (!getLogType()
           .equals(other.getLogType())) return false;
-      if (!getDrainPretrainedTemplateMatched()
-          .equals(other.getDrainPretrainedTemplateMatched())) return false;
+      if (!getTemplateMatched()
+          .equals(other.getTemplateMatched())) return false;
+      if (getTemplateClusterId()
+          != other.getTemplateClusterId()) return false;
       if (!getInferenceModel()
           .equals(other.getInferenceModel())) return false;
       if (java.lang.Float.floatToIntBits(getOpnilogConfidence())
@@ -651,8 +679,11 @@ public final class OpniPayloadProto {
       hash = (53 * hash) + getAnomalyLevel().hashCode();
       hash = (37 * hash) + LOG_TYPE_FIELD_NUMBER;
       hash = (53 * hash) + getLogType().hashCode();
-      hash = (37 * hash) + DRAIN_PRETRAINED_TEMPLATE_MATCHED_FIELD_NUMBER;
-      hash = (53 * hash) + getDrainPretrainedTemplateMatched().hashCode();
+      hash = (37 * hash) + TEMPLATE_MATCHED_FIELD_NUMBER;
+      hash = (53 * hash) + getTemplateMatched().hashCode();
+      hash = (37 * hash) + TEMPLATE_CLUSTER_ID_FIELD_NUMBER;
+      hash = (53 * hash) + com.google.protobuf.Internal.hashLong(
+          getTemplateClusterId());
       hash = (37 * hash) + INFERENCE_MODEL_FIELD_NUMBER;
       hash = (53 * hash) + getInferenceModel().hashCode();
       hash = (37 * hash) + OPNILOG_CONFIDENCE_FIELD_NUMBER;
@@ -803,7 +834,9 @@ public final class OpniPayloadProto {
 
         logType_ = "";
 
-        drainPretrainedTemplateMatched_ = "";
+        templateMatched_ = "";
+
+        templateClusterId_ = 0L;
 
         inferenceModel_ = "";
 
@@ -841,7 +874,8 @@ public final class OpniPayloadProto {
         result.maskedLog_ = maskedLog_;
         result.anomalyLevel_ = anomalyLevel_;
         result.logType_ = logType_;
-        result.drainPretrainedTemplateMatched_ = drainPretrainedTemplateMatched_;
+        result.templateMatched_ = templateMatched_;
+        result.templateClusterId_ = templateClusterId_;
         result.inferenceModel_ = inferenceModel_;
         result.opnilogConfidence_ = opnilogConfidence_;
         onBuilt();
@@ -916,9 +950,12 @@ public final class OpniPayloadProto {
           logType_ = other.logType_;
           onChanged();
         }
-        if (!other.getDrainPretrainedTemplateMatched().isEmpty()) {
-          drainPretrainedTemplateMatched_ = other.drainPretrainedTemplateMatched_;
+        if (!other.getTemplateMatched().isEmpty()) {
+          templateMatched_ = other.templateMatched_;
           onChanged();
+        }
+        if (other.getTemplateClusterId() != 0L) {
+          setTemplateClusterId(other.getTemplateClusterId());
         }
         if (!other.getInferenceModel().isEmpty()) {
           inferenceModel_ = other.inferenceModel_;
@@ -1370,78 +1407,104 @@ public final class OpniPayloadProto {
         return this;
       }
 
-      private java.lang.Object drainPretrainedTemplateMatched_ = "";
+      private java.lang.Object templateMatched_ = "";
       /**
-       * <code>string drain_pretrained_template_matched = 7;</code>
+       * <code>string template_matched = 7;</code>
        */
-      public java.lang.String getDrainPretrainedTemplateMatched() {
-        java.lang.Object ref = drainPretrainedTemplateMatched_;
+      public java.lang.String getTemplateMatched() {
+        java.lang.Object ref = templateMatched_;
         if (!(ref instanceof java.lang.String)) {
           com.google.protobuf.ByteString bs =
               (com.google.protobuf.ByteString) ref;
           java.lang.String s = bs.toStringUtf8();
-          drainPretrainedTemplateMatched_ = s;
+          templateMatched_ = s;
           return s;
         } else {
           return (java.lang.String) ref;
         }
       }
       /**
-       * <code>string drain_pretrained_template_matched = 7;</code>
+       * <code>string template_matched = 7;</code>
        */
       public com.google.protobuf.ByteString
-          getDrainPretrainedTemplateMatchedBytes() {
-        java.lang.Object ref = drainPretrainedTemplateMatched_;
+          getTemplateMatchedBytes() {
+        java.lang.Object ref = templateMatched_;
         if (ref instanceof String) {
           com.google.protobuf.ByteString b = 
               com.google.protobuf.ByteString.copyFromUtf8(
                   (java.lang.String) ref);
-          drainPretrainedTemplateMatched_ = b;
+          templateMatched_ = b;
           return b;
         } else {
           return (com.google.protobuf.ByteString) ref;
         }
       }
       /**
-       * <code>string drain_pretrained_template_matched = 7;</code>
+       * <code>string template_matched = 7;</code>
        */
-      public Builder setDrainPretrainedTemplateMatched(
+      public Builder setTemplateMatched(
           java.lang.String value) {
         if (value == null) {
     throw new NullPointerException();
   }
   
-        drainPretrainedTemplateMatched_ = value;
+        templateMatched_ = value;
         onChanged();
         return this;
       }
       /**
-       * <code>string drain_pretrained_template_matched = 7;</code>
+       * <code>string template_matched = 7;</code>
        */
-      public Builder clearDrainPretrainedTemplateMatched() {
+      public Builder clearTemplateMatched() {
         
-        drainPretrainedTemplateMatched_ = getDefaultInstance().getDrainPretrainedTemplateMatched();
+        templateMatched_ = getDefaultInstance().getTemplateMatched();
         onChanged();
         return this;
       }
       /**
-       * <code>string drain_pretrained_template_matched = 7;</code>
+       * <code>string template_matched = 7;</code>
        */
-      public Builder setDrainPretrainedTemplateMatchedBytes(
+      public Builder setTemplateMatchedBytes(
           com.google.protobuf.ByteString value) {
         if (value == null) {
     throw new NullPointerException();
   }
   checkByteStringIsUtf8(value);
         
-        drainPretrainedTemplateMatched_ = value;
+        templateMatched_ = value;
+        onChanged();
+        return this;
+      }
+
+      private long templateClusterId_ ;
+      /**
+       * <code>int64 template_cluster_id = 8;</code>
+       */
+      public long getTemplateClusterId() {
+        return templateClusterId_;
+      }
+      /**
+       * <code>int64 template_cluster_id = 8;</code>
+       */
+      public Builder setTemplateClusterId(long value) {
+        
+        templateClusterId_ = value;
+        onChanged();
+        return this;
+      }
+      /**
+       * <code>int64 template_cluster_id = 8;</code>
+       */
+      public Builder clearTemplateClusterId() {
+        
+        templateClusterId_ = 0L;
         onChanged();
         return this;
       }
 
       private java.lang.Object inferenceModel_ = "";
       /**
-       * <code>string inference_model = 8;</code>
+       * <code>string inference_model = 9;</code>
        */
       public java.lang.String getInferenceModel() {
         java.lang.Object ref = inferenceModel_;
@@ -1456,7 +1519,7 @@ public final class OpniPayloadProto {
         }
       }
       /**
-       * <code>string inference_model = 8;</code>
+       * <code>string inference_model = 9;</code>
        */
       public com.google.protobuf.ByteString
           getInferenceModelBytes() {
@@ -1472,7 +1535,7 @@ public final class OpniPayloadProto {
         }
       }
       /**
-       * <code>string inference_model = 8;</code>
+       * <code>string inference_model = 9;</code>
        */
       public Builder setInferenceModel(
           java.lang.String value) {
@@ -1485,7 +1548,7 @@ public final class OpniPayloadProto {
         return this;
       }
       /**
-       * <code>string inference_model = 8;</code>
+       * <code>string inference_model = 9;</code>
        */
       public Builder clearInferenceModel() {
         
@@ -1494,7 +1557,7 @@ public final class OpniPayloadProto {
         return this;
       }
       /**
-       * <code>string inference_model = 8;</code>
+       * <code>string inference_model = 9;</code>
        */
       public Builder setInferenceModelBytes(
           com.google.protobuf.ByteString value) {
@@ -1510,13 +1573,13 @@ public final class OpniPayloadProto {
 
       private float opnilogConfidence_ ;
       /**
-       * <code>float opnilog_confidence = 9;</code>
+       * <code>float opnilog_confidence = 10;</code>
        */
       public float getOpnilogConfidence() {
         return opnilogConfidence_;
       }
       /**
-       * <code>float opnilog_confidence = 9;</code>
+       * <code>float opnilog_confidence = 10;</code>
        */
       public Builder setOpnilogConfidence(float value) {
         
@@ -1525,7 +1588,7 @@ public final class OpniPayloadProto {
         return this;
       }
       /**
-       * <code>float opnilog_confidence = 9;</code>
+       * <code>float opnilog_confidence = 10;</code>
        */
       public Builder clearOpnilogConfidence() {
         
@@ -2386,16 +2449,16 @@ public final class OpniPayloadProto {
       descriptor;
   static {
     java.lang.String[] descriptorData = {
-      "\n\rpayload.proto\022\nloganomaly\"\324\001\n\007Payload\022" +
+      "\n\rpayload.proto\022\nloganomaly\"\340\001\n\007Payload\022" +
       "\013\n\003_id\030\001 \001(\t\022\022\n\ncluster_id\030\002 \001(\t\022\013\n\003log\030" +
       "\003 \001(\t\022\022\n\nmasked_log\030\004 \001(\t\022\025\n\ranomaly_lev" +
-      "el\030\005 \001(\t\022\020\n\010log_type\030\006 \001(\t\022)\n!drain_pret" +
-      "rained_template_matched\030\007 \001(\t\022\027\n\017inferen" +
-      "ce_model\030\010 \001(\t\022\032\n\022opnilog_confidence\030\t \001" +
-      "(\002\"1\n\013PayloadList\022\"\n\005items\030\001 \003(\0132\023.logan" +
-      "omaly.PayloadB;\n\'org.opensearch.opniprep" +
-      "rocessing.pluginB\020OpniPayloadProtob\006prot" +
-      "o3"
+      "el\030\005 \001(\t\022\020\n\010log_type\030\006 \001(\t\022\030\n\020template_m" +
+      "atched\030\007 \001(\t\022\033\n\023template_cluster_id\030\010 \001(" +
+      "\003\022\027\n\017inference_model\030\t \001(\t\022\032\n\022opnilog_co" +
+      "nfidence\030\n \001(\002\"1\n\013PayloadList\022\"\n\005items\030\001" +
+      " \003(\0132\023.loganomaly.PayloadB;\n\'org.opensea" +
+      "rch.opnipreprocessing.pluginB\020OpniPayloa" +
+      "dProtob\006proto3"
     };
     com.google.protobuf.Descriptors.FileDescriptor.InternalDescriptorAssigner assigner =
         new com.google.protobuf.Descriptors.FileDescriptor.    InternalDescriptorAssigner() {
@@ -2414,7 +2477,7 @@ public final class OpniPayloadProto {
     internal_static_loganomaly_Payload_fieldAccessorTable = new
       com.google.protobuf.GeneratedMessageV3.FieldAccessorTable(
         internal_static_loganomaly_Payload_descriptor,
-        new java.lang.String[] { "Id", "ClusterId", "Log", "MaskedLog", "AnomalyLevel", "LogType", "DrainPretrainedTemplateMatched", "InferenceModel", "OpnilogConfidence", });
+        new java.lang.String[] { "Id", "ClusterId", "Log", "MaskedLog", "AnomalyLevel", "LogType", "TemplateMatched", "TemplateClusterId", "InferenceModel", "OpnilogConfidence", });
     internal_static_loganomaly_PayloadList_descriptor =
       getDescriptor().getMessageTypes().get(1);
     internal_static_loganomaly_PayloadList_fieldAccessorTable = new

@@ -177,7 +177,7 @@ public final class OpniPreProcessor extends AbstractProcessor {
         2. normalize log field
         3. identify controlplane/rancher logs
         **/
-        ingestDocument.setFieldValue("drain_pretrained_template_matched", "");
+        ingestDocument.setFieldValue("template_matched", "");
         ingestDocument.setFieldValue("anomaly_level", "");
         long unixTime = System.currentTimeMillis();
         ingestDocument.setFieldValue("ingest_at", ((Date)new Timestamp(unixTime)).toString());
