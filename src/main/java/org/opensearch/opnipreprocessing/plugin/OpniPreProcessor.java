@@ -202,6 +202,11 @@ public final class OpniPreProcessor extends AbstractProcessor {
             ingestDocument.removeField("timestamp"); 
         }
 
+        // If it's an event we don't need to do any further processing
+        if (ingestDocument.hasField("log_type") && ingestDocument.getFieldValue("log_type", String.class).equals("event")) {
+            return;
+        }
+
         // normalize field `log`
         String actualLog = "NONE";
         if (!ingestDocument.hasField("log")) {
