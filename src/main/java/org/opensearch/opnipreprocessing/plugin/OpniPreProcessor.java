@@ -292,6 +292,7 @@ public final class OpniPreProcessor extends AbstractProcessor {
                     ingestDocument.hasField("service") && ingestDocument.getFieldValue("service", String.class).equals("rancher")  ) {
                     logType = "rancher";
                 }
+                ingestDocument.setFieldValue("pod_name", ((String)kubernetes.get("pod_name")));
             }        
         }  
         ingestDocument.setFieldValue("log_type", logType);
