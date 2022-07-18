@@ -200,6 +200,11 @@ public final class OpniPreProcessor extends AbstractProcessor {
             ingestDocument.removeField("timestamp"); 
         }
 
+        // If it's an event we don't need to do any further processing
+        if (ingestDocument.hasField("log_type") && ingestDocument.getFieldValue("log_type", String.class).equals("event")) {
+            return;
+        }
+
         // normalize field `log`
         String actualLog = "NONE";
         if (!ingestDocument.hasField("log")) {
@@ -284,6 +289,7 @@ public final class OpniPreProcessor extends AbstractProcessor {
                     ingestDocument.hasField("deployment") && ingestDocument.getFieldValue("deployment", String.class).equals("rancher")  ) {
                     logType = "rancher";
                 }
+                ingestDocument.setFieldValue("pod_name", ((String)kubernetes.get("pod_name")));
             }        
         }  
         ingestDocument.setFieldValue("log_type", logType);
