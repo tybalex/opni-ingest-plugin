@@ -36,9 +36,6 @@ import static org.opensearch.ingest.ConfigurationUtils.readBooleanProperty;
 import static org.opensearch.ingest.ConfigurationUtils.readOptionalStringProperty;
 import static org.opensearch.ingest.ConfigurationUtils.readStringProperty;
 
-import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
-
 import java.security.AccessController;
 import java.security.PrivilegedExceptionAction;
 import java.security.PrivilegedActionException;
@@ -64,6 +61,7 @@ import java.nio.file.FileSystem;
 import java.io.IOException;
 import java.security.GeneralSecurityException;
 import java.lang.NullPointerException;
+
 
 
 public final class OpniPreProcessor extends AbstractProcessor {
@@ -179,7 +177,7 @@ public final class OpniPreProcessor extends AbstractProcessor {
         2. normalize log field
         3. identify controlplane/rancher logs
         **/
-        ingestDocument.setFieldValue("drain_pretrained_template_matched", "");
+        ingestDocument.setFieldValue("template_matched", "");
         ingestDocument.setFieldValue("anomaly_level", "");
         long unixTime = System.currentTimeMillis();
         ingestDocument.setFieldValue("ingest_at", ((Date)new Timestamp(unixTime)).toString());
@@ -288,8 +286,7 @@ public final class OpniPreProcessor extends AbstractProcessor {
                     }
                 }
                 if (kubernetes.containsKey("container_image") && ((String)kubernetes.get("container_image")).contains("rancher/rancher") &&
-                    ingestDocument.hasField("deployment") && ingestDocument.getFieldValue("deployment", String.class).equals("rancher") &&
-                    ingestDocument.hasField("service") && ingestDocument.getFieldValue("service", String.class).equals("rancher")  ) {
+                    ingestDocument.hasField("deployment") && ingestDocument.getFieldValue("deployment", String.class).equals("rancher")  ) {
                     logType = "rancher";
                 }
                 ingestDocument.setFieldValue("pod_name", ((String)kubernetes.get("pod_name")));
@@ -300,9 +297,12 @@ public final class OpniPreProcessor extends AbstractProcessor {
     }
 
     private void publishToNats (IngestDocument ingestDocument, Connection nc) throws PrivilegedActionException {
-        Gson gson = new Gson();
-        String payload = gson.toJson(ingestDocument.getSourceAndMetadata());
-        nc.publish("raw_logs", payload.getBytes(StandardCharsets.UTF_8) );
+        OpniPayloadProto.Payload payload = OpniPayloadProto.Payload.newBuilder()
+                  .setId(ingestDocument.getFieldValue("_id", String.class))
+                  .setClusterId(ingestDocument.getFieldValue("cluster_id", String.class))
+                  .setLog(ingestDocument.getFieldValue("log", String.class))
+                  .setLogType(ingestDocument.getFieldValue("log_type", String.class)).build();
+        nc.publish("raw_logs", payload.toByteArray() );
     }
 
     private String maskLogs(String log) {
@@ -323,7 +323,7 @@ public final class OpniPreProcessor extends AbstractProcessor {
             String targetField = readStringProperty(TYPE, tag, config, "target_field");
 
             OpniPreprocessingConfig pluginConfig = new OpniPreprocessingConfig(env);
-
+            // OpniPreprocessingConfig pluginConfig = null;
             return new OpniPreProcessor(tag, description, field, targetField, pluginConfig);
         }
     }
