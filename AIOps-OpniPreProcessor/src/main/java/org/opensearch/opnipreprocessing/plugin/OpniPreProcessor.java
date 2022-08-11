@@ -107,7 +107,6 @@ public final class OpniPreProcessor extends AbstractProcessor {
                     String generated_id = getRandomID();
                     ingestDocument.setFieldValue("_id", generated_id);
                     preprocessingDocument(ingestDocument);
-<<<<<<< HEAD:AIOps-OpniPreProcessor/src/main/java/org/opensearch/opnipreprocessing/plugin/OpniPreProcessor.java
                     //publishToNats(ingestDocument, nc);
                     if (!ingestDocument.getFieldValue("log_type", String.class).equals("workload")) {
                         publishToNats(ingestDocument, nc);
@@ -116,12 +115,6 @@ public final class OpniPreProcessor extends AbstractProcessor {
                     long endTime = System.nanoTime();
                     ingestDocument.setFieldValue("aiops_extraction_time_ms", (endTime-startTime) / 1000000.0);
                     
-=======
-                    publishToNats(ingestDocument, nc);
-                    //if (!ingestDocument.getFieldValue("log_type", String.class).equals("workload")) {
-                    //    publishToNats(ingestDocument, nc);
-                    //}
->>>>>>> Introduce logic for Longhorn logs and remove filter for omitting workload logs being sent over:src/main/java/org/opensearch/opnipreprocessing/plugin/OpniPreProcessor.java
                     return ingestDocument;
                 }
             });
@@ -225,10 +218,6 @@ public final class OpniPreProcessor extends AbstractProcessor {
         // normalize field log_type and kubernetesComponent conponent
         String logType = "workload";
         String kubernetesComponent = "";
-        String podName = ""
-        String namespaceName = ""
-        String deployment = "";
-        String service = "";
         
         if (ingestDocument.hasField("filename")) {
             String controlPlaneName = ingestDocument.getFieldValue("filename", String.class);
@@ -281,49 +270,23 @@ public final class OpniPreProcessor extends AbstractProcessor {
                     ingestDocument.hasField("deployment") && ingestDocument.getFieldValue("deployment", String.class).equals("rancher")  ) {
                     logType = "rancher";
                 }
-<<<<<<< HEAD:AIOps-OpniPreProcessor/src/main/java/org/opensearch/opnipreprocessing/plugin/OpniPreProcessor.java
                 if (kubernetes.containsKey("container_image") && ((String)kubernetes.get("container_image")).contains("longhornio-")) {
                     logType = "longhorn";
                 }
-                if kubernetes.containsKey("pod_name") {
-                    podName = ((String)kubernetes.get("pod_name"))
-                }
-                if kubernetes.containsKey("namespace_name") {
-                    namespaceName = ((String)kubernetes.get("namespace_name"))
-                } 
-=======
-                if (kubernetes.containsKey("container_image") && ((String)kubernetes.get("container_image")).contains("longhornio/")) {
-                    logType = "longhorn";
-                }
                 ingestDocument.setFieldValue("pod_name", ((String)kubernetes.get("pod_name")));
->>>>>>> Introduce logic for Longhorn logs and remove filter for omitting workload logs being sent over:src/main/java/org/opensearch/opnipreprocessing/plugin/OpniPreProcessor.java
             }        
-        }
-        if (ingestDocument.hasField("deployment")) {
-            deployment = ingestDocument.getFieldValue("deployment", String.class);
-        }
-        if (ingestDocument.hasField("service")) {
-            service = ingestDocument.getFieldValue("service", String.class);
-        }    
+        }  
         ingestDocument.setFieldValue("log_type", logType);
         ingestDocument.setFieldValue("kubernetes_component", kubernetesComponent);
-        ingestDocument.setFieldValue("pod_name", podName);
-        ingestDocument.setFieldValue("namespace_name", namespaceName);
-        ingestDocument.setFieldValue("deployment", deployment);
-        ingestDocument.setFieldValue("service", service);
     }
 
-    private void publishToNats (IngestDocument ingestDocument, Connection nc, String subject) throws PrivilegedActionException {
+    private void publishToNats (IngestDocument ingestDocument, Connection nc) throws PrivilegedActionException {
         OpniPayloadProto.Payload payload = OpniPayloadProto.Payload.newBuilder()
                   .setId(ingestDocument.getFieldValue("_id", String.class))
                   .setClusterId(ingestDocument.getFieldValue("cluster_id", String.class))
                   .setLog(ingestDocument.getFieldValue("log", String.class))
-                  .setLogType(ingestDocument.getFieldValue("log_type", String.class))
-                  .setPodName(ingestDocument.getFieldValue("pod_name", String.class))
-                  .setNamespaceName(ingestDocument.getFieldValue("namespace_name", String.class))
-                  .setDeployment(ingestDocument.getFieldValue("deployment", String.class))
-                  .setService(ingestDocument.getFieldValue("service", String.class)).build();
-        nc.publish(subject, payload.toByteArray() );
+                  .setLogType(ingestDocument.getFieldValue("log_type", String.class)).build();
+        nc.publish("raw_logs", payload.toByteArray() );
     }
 
     private boolean isPendingDelete (IngestDocument ingestDocument, Connection nc) throws Exception {
