@@ -107,6 +107,7 @@ public final class OpniPreProcessor extends AbstractProcessor {
                     String generated_id = getRandomID();
                     ingestDocument.setFieldValue("_id", generated_id);
                     preprocessingDocument(ingestDocument);
+<<<<<<< HEAD:AIOps-OpniPreProcessor/src/main/java/org/opensearch/opnipreprocessing/plugin/OpniPreProcessor.java
                     //publishToNats(ingestDocument, nc);
                     if (!ingestDocument.getFieldValue("log_type", String.class).equals("workload")) {
                         publishToNats(ingestDocument, nc);
@@ -115,6 +116,12 @@ public final class OpniPreProcessor extends AbstractProcessor {
                     long endTime = System.nanoTime();
                     ingestDocument.setFieldValue("aiops_extraction_time_ms", (endTime-startTime) / 1000000.0);
                     
+=======
+                    publishToNats(ingestDocument, nc);
+                    //if (!ingestDocument.getFieldValue("log_type", String.class).equals("workload")) {
+                    //    publishToNats(ingestDocument, nc);
+                    //}
+>>>>>>> Introduce logic for Longhorn logs and remove filter for omitting workload logs being sent over:src/main/java/org/opensearch/opnipreprocessing/plugin/OpniPreProcessor.java
                     return ingestDocument;
                 }
             });
@@ -274,6 +281,7 @@ public final class OpniPreProcessor extends AbstractProcessor {
                     ingestDocument.hasField("deployment") && ingestDocument.getFieldValue("deployment", String.class).equals("rancher")  ) {
                     logType = "rancher";
                 }
+<<<<<<< HEAD:AIOps-OpniPreProcessor/src/main/java/org/opensearch/opnipreprocessing/plugin/OpniPreProcessor.java
                 if (kubernetes.containsKey("container_image") && ((String)kubernetes.get("container_image")).contains("longhornio-")) {
                     logType = "longhorn";
                 }
@@ -283,6 +291,12 @@ public final class OpniPreProcessor extends AbstractProcessor {
                 if kubernetes.containsKey("namespace_name") {
                     namespaceName = ((String)kubernetes.get("namespace_name"))
                 } 
+=======
+                if (kubernetes.containsKey("container_image") && ((String)kubernetes.get("container_image")).contains("longhornio/")) {
+                    logType = "longhorn";
+                }
+                ingestDocument.setFieldValue("pod_name", ((String)kubernetes.get("pod_name")));
+>>>>>>> Introduce logic for Longhorn logs and remove filter for omitting workload logs being sent over:src/main/java/org/opensearch/opnipreprocessing/plugin/OpniPreProcessor.java
             }        
         }
         if (ingestDocument.hasField("deployment")) {
