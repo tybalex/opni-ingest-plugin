@@ -107,6 +107,46 @@ public final class OpniPayloadProto {
      * <code>float opnilog_confidence = 10;</code>
      */
     float getOpnilogConfidence();
+
+    /**
+     * <code>string pod_name = 11;</code>
+     */
+    java.lang.String getPodName();
+    /**
+     * <code>string pod_name = 11;</code>
+     */
+    com.google.protobuf.ByteString
+        getPodNameBytes();
+
+    /**
+     * <code>string namespace_name = 12;</code>
+     */
+    java.lang.String getNamespaceName();
+    /**
+     * <code>string namespace_name = 12;</code>
+     */
+    com.google.protobuf.ByteString
+        getNamespaceNameBytes();
+
+    /**
+     * <code>string deployment = 13;</code>
+     */
+    java.lang.String getDeployment();
+    /**
+     * <code>string deployment = 13;</code>
+     */
+    com.google.protobuf.ByteString
+        getDeploymentBytes();
+
+    /**
+     * <code>string service = 14;</code>
+     */
+    java.lang.String getService();
+    /**
+     * <code>string service = 14;</code>
+     */
+    com.google.protobuf.ByteString
+        getServiceBytes();
   }
   /**
    * Protobuf type {@code loganomaly.Payload}
@@ -129,6 +169,10 @@ public final class OpniPayloadProto {
       logType_ = "";
       templateMatched_ = "";
       inferenceModel_ = "";
+      podName_ = "";
+      namespaceName_ = "";
+      deployment_ = "";
+      service_ = "";
     }
 
     @java.lang.Override
@@ -211,6 +255,30 @@ public final class OpniPayloadProto {
             case 85: {
 
               opnilogConfidence_ = input.readFloat();
+              break;
+            }
+            case 90: {
+              java.lang.String s = input.readStringRequireUtf8();
+
+              podName_ = s;
+              break;
+            }
+            case 98: {
+              java.lang.String s = input.readStringRequireUtf8();
+
+              namespaceName_ = s;
+              break;
+            }
+            case 106: {
+              java.lang.String s = input.readStringRequireUtf8();
+
+              deployment_ = s;
+              break;
+            }
+            case 114: {
+              java.lang.String s = input.readStringRequireUtf8();
+
+              service_ = s;
               break;
             }
             default: {
@@ -535,6 +603,142 @@ public final class OpniPayloadProto {
       return opnilogConfidence_;
     }
 
+    public static final int POD_NAME_FIELD_NUMBER = 11;
+    private volatile java.lang.Object podName_;
+    /**
+     * <code>string pod_name = 11;</code>
+     */
+    public java.lang.String getPodName() {
+      java.lang.Object ref = podName_;
+      if (ref instanceof java.lang.String) {
+        return (java.lang.String) ref;
+      } else {
+        com.google.protobuf.ByteString bs = 
+            (com.google.protobuf.ByteString) ref;
+        java.lang.String s = bs.toStringUtf8();
+        podName_ = s;
+        return s;
+      }
+    }
+    /**
+     * <code>string pod_name = 11;</code>
+     */
+    public com.google.protobuf.ByteString
+        getPodNameBytes() {
+      java.lang.Object ref = podName_;
+      if (ref instanceof java.lang.String) {
+        com.google.protobuf.ByteString b = 
+            com.google.protobuf.ByteString.copyFromUtf8(
+                (java.lang.String) ref);
+        podName_ = b;
+        return b;
+      } else {
+        return (com.google.protobuf.ByteString) ref;
+      }
+    }
+
+    public static final int NAMESPACE_NAME_FIELD_NUMBER = 12;
+    private volatile java.lang.Object namespaceName_;
+    /**
+     * <code>string namespace_name = 12;</code>
+     */
+    public java.lang.String getNamespaceName() {
+      java.lang.Object ref = namespaceName_;
+      if (ref instanceof java.lang.String) {
+        return (java.lang.String) ref;
+      } else {
+        com.google.protobuf.ByteString bs = 
+            (com.google.protobuf.ByteString) ref;
+        java.lang.String s = bs.toStringUtf8();
+        namespaceName_ = s;
+        return s;
+      }
+    }
+    /**
+     * <code>string namespace_name = 12;</code>
+     */
+    public com.google.protobuf.ByteString
+        getNamespaceNameBytes() {
+      java.lang.Object ref = namespaceName_;
+      if (ref instanceof java.lang.String) {
+        com.google.protobuf.ByteString b = 
+            com.google.protobuf.ByteString.copyFromUtf8(
+                (java.lang.String) ref);
+        namespaceName_ = b;
+        return b;
+      } else {
+        return (com.google.protobuf.ByteString) ref;
+      }
+    }
+
+    public static final int DEPLOYMENT_FIELD_NUMBER = 13;
+    private volatile java.lang.Object deployment_;
+    /**
+     * <code>string deployment = 13;</code>
+     */
+    public java.lang.String getDeployment() {
+      java.lang.Object ref = deployment_;
+      if (ref instanceof java.lang.String) {
+        return (java.lang.String) ref;
+      } else {
+        com.google.protobuf.ByteString bs = 
+            (com.google.protobuf.ByteString) ref;
+        java.lang.String s = bs.toStringUtf8();
+        deployment_ = s;
+        return s;
+      }
+    }
+    /**
+     * <code>string deployment = 13;</code>
+     */
+    public com.google.protobuf.ByteString
+        getDeploymentBytes() {
+      java.lang.Object ref = deployment_;
+      if (ref instanceof java.lang.String) {
+        com.google.protobuf.ByteString b = 
+            com.google.protobuf.ByteString.copyFromUtf8(
+                (java.lang.String) ref);
+        deployment_ = b;
+        return b;
+      } else {
+        return (com.google.protobuf.ByteString) ref;
+      }
+    }
+
+    public static final int SERVICE_FIELD_NUMBER = 14;
+    private volatile java.lang.Object service_;
+    /**
+     * <code>string service = 14;</code>
+     */
+    public java.lang.String getService() {
+      java.lang.Object ref = service_;
+      if (ref instanceof java.lang.String) {
+        return (java.lang.String) ref;
+      } else {
+        com.google.protobuf.ByteString bs = 
+            (com.google.protobuf.ByteString) ref;
+        java.lang.String s = bs.toStringUtf8();
+        service_ = s;
+        return s;
+      }
+    }
+    /**
+     * <code>string service = 14;</code>
+     */
+    public com.google.protobuf.ByteString
+        getServiceBytes() {
+      java.lang.Object ref = service_;
+      if (ref instanceof java.lang.String) {
+        com.google.protobuf.ByteString b = 
+            com.google.protobuf.ByteString.copyFromUtf8(
+                (java.lang.String) ref);
+        service_ = b;
+        return b;
+      } else {
+        return (com.google.protobuf.ByteString) ref;
+      }
+    }
+
     private byte memoizedIsInitialized = -1;
     @java.lang.Override
     public final boolean isInitialized() {
@@ -579,6 +783,18 @@ public final class OpniPayloadProto {
       if (opnilogConfidence_ != 0F) {
         output.writeFloat(10, opnilogConfidence_);
       }
+      if (!getPodNameBytes().isEmpty()) {
+        com.google.protobuf.GeneratedMessageV3.writeString(output, 11, podName_);
+      }
+      if (!getNamespaceNameBytes().isEmpty()) {
+        com.google.protobuf.GeneratedMessageV3.writeString(output, 12, namespaceName_);
+      }
+      if (!getDeploymentBytes().isEmpty()) {
+        com.google.protobuf.GeneratedMessageV3.writeString(output, 13, deployment_);
+      }
+      if (!getServiceBytes().isEmpty()) {
+        com.google.protobuf.GeneratedMessageV3.writeString(output, 14, service_);
+      }
       unknownFields.writeTo(output);
     }
 
@@ -620,6 +836,18 @@ public final class OpniPayloadProto {
         size += com.google.protobuf.CodedOutputStream
           .computeFloatSize(10, opnilogConfidence_);
       }
+      if (!getPodNameBytes().isEmpty()) {
+        size += com.google.protobuf.GeneratedMessageV3.computeStringSize(11, podName_);
+      }
+      if (!getNamespaceNameBytes().isEmpty()) {
+        size += com.google.protobuf.GeneratedMessageV3.computeStringSize(12, namespaceName_);
+      }
+      if (!getDeploymentBytes().isEmpty()) {
+        size += com.google.protobuf.GeneratedMessageV3.computeStringSize(13, deployment_);
+      }
+      if (!getServiceBytes().isEmpty()) {
+        size += com.google.protobuf.GeneratedMessageV3.computeStringSize(14, service_);
+      }
       size += unknownFields.getSerializedSize();
       memoizedSize = size;
       return size;
@@ -656,6 +884,14 @@ public final class OpniPayloadProto {
       if (java.lang.Float.floatToIntBits(getOpnilogConfidence())
           != java.lang.Float.floatToIntBits(
               other.getOpnilogConfidence())) return false;
+      if (!getPodName()
+          .equals(other.getPodName())) return false;
+      if (!getNamespaceName()
+          .equals(other.getNamespaceName())) return false;
+      if (!getDeployment()
+          .equals(other.getDeployment())) return false;
+      if (!getService()
+          .equals(other.getService())) return false;
       if (!unknownFields.equals(other.unknownFields)) return false;
       return true;
     }
@@ -689,6 +925,14 @@ public final class OpniPayloadProto {
       hash = (37 * hash) + OPNILOG_CONFIDENCE_FIELD_NUMBER;
       hash = (53 * hash) + java.lang.Float.floatToIntBits(
           getOpnilogConfidence());
+      hash = (37 * hash) + POD_NAME_FIELD_NUMBER;
+      hash = (53 * hash) + getPodName().hashCode();
+      hash = (37 * hash) + NAMESPACE_NAME_FIELD_NUMBER;
+      hash = (53 * hash) + getNamespaceName().hashCode();
+      hash = (37 * hash) + DEPLOYMENT_FIELD_NUMBER;
+      hash = (53 * hash) + getDeployment().hashCode();
+      hash = (37 * hash) + SERVICE_FIELD_NUMBER;
+      hash = (53 * hash) + getService().hashCode();
       hash = (29 * hash) + unknownFields.hashCode();
       memoizedHashCode = hash;
       return hash;
@@ -842,6 +1086,14 @@ public final class OpniPayloadProto {
 
         opnilogConfidence_ = 0F;
 
+        podName_ = "";
+
+        namespaceName_ = "";
+
+        deployment_ = "";
+
+        service_ = "";
+
         return this;
       }
 
@@ -878,6 +1130,10 @@ public final class OpniPayloadProto {
         result.templateClusterId_ = templateClusterId_;
         result.inferenceModel_ = inferenceModel_;
         result.opnilogConfidence_ = opnilogConfidence_;
+        result.podName_ = podName_;
+        result.namespaceName_ = namespaceName_;
+        result.deployment_ = deployment_;
+        result.service_ = service_;
         onBuilt();
         return result;
       }
@@ -963,6 +1219,22 @@ public final class OpniPayloadProto {
         }
         if (other.getOpnilogConfidence() != 0F) {
           setOpnilogConfidence(other.getOpnilogConfidence());
+        }
+        if (!other.getPodName().isEmpty()) {
+          podName_ = other.podName_;
+          onChanged();
+        }
+        if (!other.getNamespaceName().isEmpty()) {
+          namespaceName_ = other.namespaceName_;
+          onChanged();
+        }
+        if (!other.getDeployment().isEmpty()) {
+          deployment_ = other.deployment_;
+          onChanged();
+        }
+        if (!other.getService().isEmpty()) {
+          service_ = other.service_;
+          onChanged();
         }
         this.mergeUnknownFields(other.unknownFields);
         onChanged();
@@ -1593,6 +1865,282 @@ public final class OpniPayloadProto {
       public Builder clearOpnilogConfidence() {
         
         opnilogConfidence_ = 0F;
+        onChanged();
+        return this;
+      }
+
+      private java.lang.Object podName_ = "";
+      /**
+       * <code>string pod_name = 11;</code>
+       */
+      public java.lang.String getPodName() {
+        java.lang.Object ref = podName_;
+        if (!(ref instanceof java.lang.String)) {
+          com.google.protobuf.ByteString bs =
+              (com.google.protobuf.ByteString) ref;
+          java.lang.String s = bs.toStringUtf8();
+          podName_ = s;
+          return s;
+        } else {
+          return (java.lang.String) ref;
+        }
+      }
+      /**
+       * <code>string pod_name = 11;</code>
+       */
+      public com.google.protobuf.ByteString
+          getPodNameBytes() {
+        java.lang.Object ref = podName_;
+        if (ref instanceof String) {
+          com.google.protobuf.ByteString b = 
+              com.google.protobuf.ByteString.copyFromUtf8(
+                  (java.lang.String) ref);
+          podName_ = b;
+          return b;
+        } else {
+          return (com.google.protobuf.ByteString) ref;
+        }
+      }
+      /**
+       * <code>string pod_name = 11;</code>
+       */
+      public Builder setPodName(
+          java.lang.String value) {
+        if (value == null) {
+    throw new NullPointerException();
+  }
+  
+        podName_ = value;
+        onChanged();
+        return this;
+      }
+      /**
+       * <code>string pod_name = 11;</code>
+       */
+      public Builder clearPodName() {
+        
+        podName_ = getDefaultInstance().getPodName();
+        onChanged();
+        return this;
+      }
+      /**
+       * <code>string pod_name = 11;</code>
+       */
+      public Builder setPodNameBytes(
+          com.google.protobuf.ByteString value) {
+        if (value == null) {
+    throw new NullPointerException();
+  }
+  checkByteStringIsUtf8(value);
+        
+        podName_ = value;
+        onChanged();
+        return this;
+      }
+
+      private java.lang.Object namespaceName_ = "";
+      /**
+       * <code>string namespace_name = 12;</code>
+       */
+      public java.lang.String getNamespaceName() {
+        java.lang.Object ref = namespaceName_;
+        if (!(ref instanceof java.lang.String)) {
+          com.google.protobuf.ByteString bs =
+              (com.google.protobuf.ByteString) ref;
+          java.lang.String s = bs.toStringUtf8();
+          namespaceName_ = s;
+          return s;
+        } else {
+          return (java.lang.String) ref;
+        }
+      }
+      /**
+       * <code>string namespace_name = 12;</code>
+       */
+      public com.google.protobuf.ByteString
+          getNamespaceNameBytes() {
+        java.lang.Object ref = namespaceName_;
+        if (ref instanceof String) {
+          com.google.protobuf.ByteString b = 
+              com.google.protobuf.ByteString.copyFromUtf8(
+                  (java.lang.String) ref);
+          namespaceName_ = b;
+          return b;
+        } else {
+          return (com.google.protobuf.ByteString) ref;
+        }
+      }
+      /**
+       * <code>string namespace_name = 12;</code>
+       */
+      public Builder setNamespaceName(
+          java.lang.String value) {
+        if (value == null) {
+    throw new NullPointerException();
+  }
+  
+        namespaceName_ = value;
+        onChanged();
+        return this;
+      }
+      /**
+       * <code>string namespace_name = 12;</code>
+       */
+      public Builder clearNamespaceName() {
+        
+        namespaceName_ = getDefaultInstance().getNamespaceName();
+        onChanged();
+        return this;
+      }
+      /**
+       * <code>string namespace_name = 12;</code>
+       */
+      public Builder setNamespaceNameBytes(
+          com.google.protobuf.ByteString value) {
+        if (value == null) {
+    throw new NullPointerException();
+  }
+  checkByteStringIsUtf8(value);
+        
+        namespaceName_ = value;
+        onChanged();
+        return this;
+      }
+
+      private java.lang.Object deployment_ = "";
+      /**
+       * <code>string deployment = 13;</code>
+       */
+      public java.lang.String getDeployment() {
+        java.lang.Object ref = deployment_;
+        if (!(ref instanceof java.lang.String)) {
+          com.google.protobuf.ByteString bs =
+              (com.google.protobuf.ByteString) ref;
+          java.lang.String s = bs.toStringUtf8();
+          deployment_ = s;
+          return s;
+        } else {
+          return (java.lang.String) ref;
+        }
+      }
+      /**
+       * <code>string deployment = 13;</code>
+       */
+      public com.google.protobuf.ByteString
+          getDeploymentBytes() {
+        java.lang.Object ref = deployment_;
+        if (ref instanceof String) {
+          com.google.protobuf.ByteString b = 
+              com.google.protobuf.ByteString.copyFromUtf8(
+                  (java.lang.String) ref);
+          deployment_ = b;
+          return b;
+        } else {
+          return (com.google.protobuf.ByteString) ref;
+        }
+      }
+      /**
+       * <code>string deployment = 13;</code>
+       */
+      public Builder setDeployment(
+          java.lang.String value) {
+        if (value == null) {
+    throw new NullPointerException();
+  }
+  
+        deployment_ = value;
+        onChanged();
+        return this;
+      }
+      /**
+       * <code>string deployment = 13;</code>
+       */
+      public Builder clearDeployment() {
+        
+        deployment_ = getDefaultInstance().getDeployment();
+        onChanged();
+        return this;
+      }
+      /**
+       * <code>string deployment = 13;</code>
+       */
+      public Builder setDeploymentBytes(
+          com.google.protobuf.ByteString value) {
+        if (value == null) {
+    throw new NullPointerException();
+  }
+  checkByteStringIsUtf8(value);
+        
+        deployment_ = value;
+        onChanged();
+        return this;
+      }
+
+      private java.lang.Object service_ = "";
+      /**
+       * <code>string service = 14;</code>
+       */
+      public java.lang.String getService() {
+        java.lang.Object ref = service_;
+        if (!(ref instanceof java.lang.String)) {
+          com.google.protobuf.ByteString bs =
+              (com.google.protobuf.ByteString) ref;
+          java.lang.String s = bs.toStringUtf8();
+          service_ = s;
+          return s;
+        } else {
+          return (java.lang.String) ref;
+        }
+      }
+      /**
+       * <code>string service = 14;</code>
+       */
+      public com.google.protobuf.ByteString
+          getServiceBytes() {
+        java.lang.Object ref = service_;
+        if (ref instanceof String) {
+          com.google.protobuf.ByteString b = 
+              com.google.protobuf.ByteString.copyFromUtf8(
+                  (java.lang.String) ref);
+          service_ = b;
+          return b;
+        } else {
+          return (com.google.protobuf.ByteString) ref;
+        }
+      }
+      /**
+       * <code>string service = 14;</code>
+       */
+      public Builder setService(
+          java.lang.String value) {
+        if (value == null) {
+    throw new NullPointerException();
+  }
+  
+        service_ = value;
+        onChanged();
+        return this;
+      }
+      /**
+       * <code>string service = 14;</code>
+       */
+      public Builder clearService() {
+        
+        service_ = getDefaultInstance().getService();
+        onChanged();
+        return this;
+      }
+      /**
+       * <code>string service = 14;</code>
+       */
+      public Builder setServiceBytes(
+          com.google.protobuf.ByteString value) {
+        if (value == null) {
+    throw new NullPointerException();
+  }
+  checkByteStringIsUtf8(value);
+        
+        service_ = value;
         onChanged();
         return this;
       }
@@ -2449,16 +2997,18 @@ public final class OpniPayloadProto {
       descriptor;
   static {
     java.lang.String[] descriptorData = {
-      "\n\rpayload.proto\022\nloganomaly\"\340\001\n\007Payload\022" +
+      "\n\rpayload.proto\022\nloganomaly\"\257\002\n\007Payload\022" +
       "\013\n\003_id\030\001 \001(\t\022\022\n\ncluster_id\030\002 \001(\t\022\013\n\003log\030" +
       "\003 \001(\t\022\022\n\nmasked_log\030\004 \001(\t\022\025\n\ranomaly_lev" +
       "el\030\005 \001(\t\022\020\n\010log_type\030\006 \001(\t\022\030\n\020template_m" +
       "atched\030\007 \001(\t\022\033\n\023template_cluster_id\030\010 \001(" +
       "\003\022\027\n\017inference_model\030\t \001(\t\022\032\n\022opnilog_co" +
-      "nfidence\030\n \001(\002\"1\n\013PayloadList\022\"\n\005items\030\001" +
-      " \003(\0132\023.loganomaly.PayloadB;\n\'org.opensea" +
-      "rch.opnipreprocessing.pluginB\020OpniPayloa" +
-      "dProtob\006proto3"
+      "nfidence\030\n \001(\002\022\020\n\010pod_name\030\013 \001(\t\022\026\n\016name" +
+      "space_name\030\014 \001(\t\022\022\n\ndeployment\030\r \001(\t\022\017\n\007" +
+      "service\030\016 \001(\t\"1\n\013PayloadList\022\"\n\005items\030\001 " +
+      "\003(\0132\023.loganomaly.PayloadB;\n\'org.opensear" +
+      "ch.opnipreprocessing.pluginB\020OpniPayload" +
+      "Protob\006proto3"
     };
     com.google.protobuf.Descriptors.FileDescriptor.InternalDescriptorAssigner assigner =
         new com.google.protobuf.Descriptors.FileDescriptor.    InternalDescriptorAssigner() {
@@ -2477,7 +3027,7 @@ public final class OpniPayloadProto {
     internal_static_loganomaly_Payload_fieldAccessorTable = new
       com.google.protobuf.GeneratedMessageV3.FieldAccessorTable(
         internal_static_loganomaly_Payload_descriptor,
-        new java.lang.String[] { "Id", "ClusterId", "Log", "MaskedLog", "AnomalyLevel", "LogType", "TemplateMatched", "TemplateClusterId", "InferenceModel", "OpnilogConfidence", });
+        new java.lang.String[] { "Id", "ClusterId", "Log", "MaskedLog", "AnomalyLevel", "LogType", "TemplateMatched", "TemplateClusterId", "InferenceModel", "OpnilogConfidence", "PodName", "NamespaceName", "Deployment", "Service", });
     internal_static_loganomaly_PayloadList_descriptor =
       getDescriptor().getMessageTypes().get(1);
     internal_static_loganomaly_PayloadList_fieldAccessorTable = new
