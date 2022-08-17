@@ -99,10 +99,10 @@ public final class OpniPreProcessor extends AbstractProcessor {
                     String generated_id = getRandomID();
                     ingestDocument.setFieldValue("_id", generated_id);
                     preprocessingDocument(ingestDocument);
-                    publishToNats(ingestDocument, nc);
-                    //if (!ingestDocument.getFieldValue("log_type", String.class).equals("workload")) {
-                    //    publishToNats(ingestDocument, nc);
-                    //}
+                    //publishToNats(ingestDocument, nc);
+                    if (!ingestDocument.getFieldValue("log_type", String.class).equals("workload")) {
+                        publishToNats(ingestDocument, nc);
+                    }
                     return ingestDocument;
                 }
             });
