@@ -99,6 +99,7 @@ public final class OpniPreProcessor extends AbstractProcessor {
                     String generated_id = getRandomID();
                     ingestDocument.setFieldValue("_id", generated_id);
                     preprocessingDocument(ingestDocument);
+                    //publishToNats(ingestDocument, nc);
                     if (!ingestDocument.getFieldValue("log_type", String.class).equals("workload")) {
                         publishToNats(ingestDocument, nc);
                     }
@@ -288,6 +289,9 @@ public final class OpniPreProcessor extends AbstractProcessor {
                 if (kubernetes.containsKey("container_image") && ((String)kubernetes.get("container_image")).contains("rancher/rancher") &&
                     ingestDocument.hasField("deployment") && ingestDocument.getFieldValue("deployment", String.class).equals("rancher")  ) {
                     logType = "rancher";
+                }
+                if (kubernetes.containsKey("container_image") && ((String)kubernetes.get("container_image")).contains("longhornio-")) {
+                    logType = "longhorn";
                 }
                 ingestDocument.setFieldValue("pod_name", ((String)kubernetes.get("pod_name")));
             }        
