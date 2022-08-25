@@ -211,6 +211,8 @@ public final class OpniPreProcessor extends AbstractProcessor {
         // normalize field log_type and kubernetesComponent conponent
         String logType = "workload";
         String kubernetesComponent = "";
+        String podName = ""
+        String namespaceName = ""
         String deployment = "";
         String service = "";
         
@@ -268,20 +270,24 @@ public final class OpniPreProcessor extends AbstractProcessor {
                 if (kubernetes.containsKey("container_image") && ((String)kubernetes.get("container_image")).contains("longhornio-")) {
                     logType = "longhorn";
                 }
-                ingestDocument.setFieldValue("pod_name", ((String)kubernetes.get("pod_name")));
-                ingestDocument.setFieldValue("namespace_name", ((String)kubernetes.get("namespace_name")));
-
+                if kubernetes.containsKey("pod_name") {
+                    podName = ((String)kubernetes.get("pod_name"))
+                }
+                if kubernetes.containsKey("namespace_name") {
+                    namespaceName = ((String)kubernetes.get("namespace_name"))
+                }
+                if (ingestDocument.hasField("deployment")) {
+                    deployment = ingestDocument.getFieldValue("deployment", String.class);
+                }
+                if (ingestDocument.hasField("service")) {
+                    service = ingestDocument.getFieldValue("service", String.class);
+                    }   
             }        
-        }
-        if (ingestDocument.hasField("deployment")) {
-            deployment = ingestDocument.getFieldValue("deployment", String.class);
-            ingestDocument.setFieldValue("deployment", deployment);
-        }
-        if (ingestDocument.hasField("service")) {
-            service = ingestDocument.getFieldValue("service", String.class);
-        }    
+        }  
         ingestDocument.setFieldValue("log_type", logType);
         ingestDocument.setFieldValue("kubernetes_component", kubernetesComponent);
+        ingestDocument.setFieldValue("pod_name", podName);
+        ingestDocument.setFieldValue("namespace_name", namespaceName);
         ingestDocument.setFieldValue("deployment", deployment);
         ingestDocument.setFieldValue("service", service);
     }
