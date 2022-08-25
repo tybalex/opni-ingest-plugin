@@ -215,6 +215,8 @@ public final class OpniPreProcessor extends AbstractProcessor {
         // normalize field log_type and kubernetesComponent conponent
         String logType = "workload";
         String kubernetesComponent = "";
+        String podName = ""
+        String namespaceName = ""
         String deployment = "";
         String service = "";
         
@@ -279,16 +281,11 @@ public final class OpniPreProcessor extends AbstractProcessor {
                     namespaceName = ((String)kubernetes.get("namespace_name"))
                 } 
             }        
-        }
-        if (ingestDocument.hasField("deployment")) {
-            deployment = ingestDocument.getFieldValue("deployment", String.class);
-            ingestDocument.setFieldValue("deployment", deployment);
-        }
-        if (ingestDocument.hasField("service")) {
-            service = ingestDocument.getFieldValue("service", String.class);
-        }    
+        }  
         ingestDocument.setFieldValue("log_type", logType);
         ingestDocument.setFieldValue("kubernetes_component", kubernetesComponent);
+        ingestDocument.setFieldValue("pod_name", podName);
+        ingestDocument.setFieldValue("namespace_name", namespaceName);
         ingestDocument.setFieldValue("deployment", deployment);
         ingestDocument.setFieldValue("service", service);
     }
