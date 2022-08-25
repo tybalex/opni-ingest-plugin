@@ -275,15 +275,15 @@ public final class OpniPreProcessor extends AbstractProcessor {
                 }
                 if kubernetes.containsKey("namespace_name") {
                     namespaceName = ((String)kubernetes.get("namespace_name"))
-                }
-                if (ingestDocument.hasField("deployment")) {
-                    deployment = ingestDocument.getFieldValue("deployment", String.class);
-                }
-                if (ingestDocument.hasField("service")) {
-                    service = ingestDocument.getFieldValue("service", String.class);
-                }   
+                } 
             }        
-        }  
+        }
+        if (ingestDocument.hasField("deployment")) {
+            deployment = ingestDocument.getFieldValue("deployment", String.class);
+        }
+        if (ingestDocument.hasField("service")) {
+            service = ingestDocument.getFieldValue("service", String.class);
+        }    
         ingestDocument.setFieldValue("log_type", logType);
         ingestDocument.setFieldValue("kubernetes_component", kubernetesComponent);
         ingestDocument.setFieldValue("pod_name", podName);
