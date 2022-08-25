@@ -293,7 +293,7 @@ public final class OpniPreProcessor extends AbstractProcessor {
         ingestDocument.setFieldValue("service", service);
     }
 
-    private void publishToNats (IngestDocument ingestDocument, Connection nc) throws PrivilegedActionException {
+    private void publishToNats (IngestDocument ingestDocument, Connection nc, String subject) throws PrivilegedActionException {
         OpniPayloadProto.Payload payload = OpniPayloadProto.Payload.newBuilder()
                   .setId(ingestDocument.getFieldValue("_id", String.class))
                   .setClusterId(ingestDocument.getFieldValue("cluster_id", String.class))
@@ -303,7 +303,7 @@ public final class OpniPreProcessor extends AbstractProcessor {
                   .setNamespaceName(ingestDocument.getFieldValue("namespace_name", String.class))
                   .setDeployment(ingestDocument.getFieldValue("deployment", String.class))
                   .setService(ingestDocument.getFieldValue("service", String.class)).build();
-        nc.publish("raw_logs", payload.toByteArray() );
+        nc.publish(subject, payload.toByteArray() );
     }
 
     private boolean isPendingDelete (IngestDocument ingestDocument, Connection nc) throws Exception {
