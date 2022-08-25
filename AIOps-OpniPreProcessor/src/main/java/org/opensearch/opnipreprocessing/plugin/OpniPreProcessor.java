@@ -281,7 +281,7 @@ public final class OpniPreProcessor extends AbstractProcessor {
                 }
                 if (ingestDocument.hasField("service")) {
                     service = ingestDocument.getFieldValue("service", String.class);
-                    }   
+                }   
             }        
         }  
         ingestDocument.setFieldValue("log_type", logType);
