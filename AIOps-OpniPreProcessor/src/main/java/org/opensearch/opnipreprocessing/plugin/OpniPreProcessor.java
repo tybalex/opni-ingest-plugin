@@ -215,8 +215,8 @@ public final class OpniPreProcessor extends AbstractProcessor {
         // normalize field log_type and kubernetesComponent conponent
         String logType = "workload";
         String kubernetesComponent = "";
-        String podName = ""
-        String namespaceName = ""
+        String podName = "";
+        String namespaceName = "";
         String deployment = "";
         String service = "";
         
