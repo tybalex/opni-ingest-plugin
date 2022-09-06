@@ -23,9 +23,6 @@ import java.io.IOException;
 import java.util.Map;
 import java.util.HashMap;
 import java.util.Date;
-import io.nats.client.Connection;
-import io.nats.client.Nats;
-import io.nats.client.impl.NatsMessage;
 import java.nio.charset.StandardCharsets;
 import java.sql.Timestamp;
 import java.util.UUID;
@@ -48,6 +45,8 @@ import org.opensearch.plugins.Plugin;
 import org.opensearch.common.SuppressForbidden;
 
 import io.nats.client.Connection;
+import io.nats.client.KeyValue;
+import io.nats.client.KeyValueManagement;
 import io.nats.client.Nats;
 import io.nats.client.impl.NatsMessage;
 import io.nats.client.NKey;
@@ -91,6 +90,13 @@ public final class OpniPreProcessor extends AbstractProcessor {
 
     @Override
     public IngestDocument execute(IngestDocument ingestDocument) throws Exception {
+        try {
+            if (isPendingDelete(ingestDocument, nc)) {
+                throw new DeletePendingException(clusterID(ingestDocument));
+            }
+        } catch (PrivilegedActionException e) {
+            throw e;
+        }
         // main entry
         try {
             return AccessController.doPrivileged(new PrivilegedExceptionAction<IngestDocument>() {
@@ -307,6 +313,26 @@ public final class OpniPreProcessor extends AbstractProcessor {
                   .setLog(ingestDocument.getFieldValue("log", String.class))
                   .setLogType(ingestDocument.getFieldValue("log_type", String.class)).build();
         nc.publish("raw_logs", payload.toByteArray() );
+    }
+
+    private boolean isPendingDelete (IngestDocument ingestDocument, Connection nc) throws Exception {
+        KeyValueManagement kvm = nc.keyValueManagement();
+        if (kvm.getBucketNames().contains("pending-delete")) {
+            return false;
+        }
+        if (ingestDocument.hasField("cluster_id")) {
+            String id = ingestDocument.getFieldValue("cluster_id", String.class);
+            KeyValue kv = nc.keyValue("pending-delete");
+            return kv.keys().contains(id);
+        }
+        return false;
+    }
+
+    private String clusterID (IngestDocument ingestDocument) {
+        if (ingestDocument.hasField("cluster_id")) {
+            return ingestDocument.getFieldValue("cluster_id", String.class);
+        }
+        return "";
     }
 
     private String maskLogs(String log) {
