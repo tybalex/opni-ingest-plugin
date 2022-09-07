@@ -313,7 +313,7 @@ public final class OpniPreProcessor extends AbstractProcessor {
 
     private boolean isPendingDelete (IngestDocument ingestDocument, Connection nc) throws Exception {
         KeyValueManagement kvm = nc.keyValueManagement();
-        if (kvm.getBucketNames().contains("pending-delete")) {
+        if (!kvm.getBucketNames().contains("pending-delete")) {
             return false;
         }
         if (ingestDocument.hasField("cluster_id")) {
