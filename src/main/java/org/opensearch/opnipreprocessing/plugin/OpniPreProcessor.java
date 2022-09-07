@@ -90,12 +90,8 @@ public final class OpniPreProcessor extends AbstractProcessor {
 
     @Override
     public IngestDocument execute(IngestDocument ingestDocument) throws Exception {
-        try {
-            if (isPendingDelete(ingestDocument, nc)) {
-                throw new DeletePendingException(clusterID(ingestDocument));
-            }
-        } catch (PrivilegedActionException e) {
-            throw e;
+        if (isPendingDelete(ingestDocument, nc)) {
+            throw new DeletePendingException(clusterID(ingestDocument));
         }
         // main entry
         try {
