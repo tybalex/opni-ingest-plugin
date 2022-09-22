@@ -1,0 +1,30 @@
+/*
+ * SPDX-License-Identifier: Apache-2.0
+ *
+ * The OpenSearch Contributors require contributions made to
+ * this file be licensed under the Apache-2.0 license or a
+ * compatible open source license.
+ */
+
+syntax = "proto3";
+package loganomaly;
+option java_package = "org.opensearch.opnipreprocessing.plugin";
+option java_outer_classname = "OpniPayloadProto";
+
+message Payload {
+    string _id = 1;
+    string cluster_id = 2;
+    string log = 3;
+    string masked_log = 4;
+    string anomaly_level = 5;
+    string log_type = 6;
+    string template_matched = 7;
+    int64 template_cluster_id = 8;
+    string inference_model = 9;
+    float opnilog_confidence = 10;
+}
+
+
+message PayloadList {
+    repeated Payload items = 1;
+}
