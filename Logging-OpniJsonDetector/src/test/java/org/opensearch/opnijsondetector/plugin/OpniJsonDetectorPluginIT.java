@@ -34,6 +34,6 @@ public class OpniJsonDetectorPluginIT extends OpenSearchIntegTestCase {
         String body = EntityUtils.toString(response.getEntity());
 
         logger.info("response body: {}", body);
-        assertThat(body, containsString("opnipreprocessing"));
+        assertThat(body, containsString("opnijsondetector"));
     }
 }

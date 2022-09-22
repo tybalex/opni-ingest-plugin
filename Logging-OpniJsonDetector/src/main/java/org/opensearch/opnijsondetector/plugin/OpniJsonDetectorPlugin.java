@@ -27,8 +27,9 @@ public class OpniJsonDetectorPlugin extends Plugin implements IngestPlugin {
     }
 
     @Override
-    public Map<String, Processor.Factory> getProcessors() {
+    public Map<String, Processor.Factory> getProcessors(Processor.Parameters parameters) {
 
-        return Collections.singletonMap(OpniJsonDetector.TYPE, new OpniJsonDetector.Factory()); }
+        return Collections.singletonMap(OpniJsonDetector.TYPE, new OpniJsonDetector.Factory());
+    }
 
 }

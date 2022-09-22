@@ -5,7 +5,7 @@
  * this file be licensed under the Apache-2.0 license or a
  * compatible open source license.
  */
-package org.opensearch.opnipreprocessing.plugin;
+package org.opensearch.opnijsondetector.plugin;
 
 import org.opensearch.common.Strings;
 import org.opensearch.common.unit.ByteSizeUnit;
@@ -78,10 +78,6 @@ public final class OpniJsonDetector extends AbstractProcessor {
                     String generated_id = getRandomID();
                     ingestDocument.setFieldValue("_id", generated_id);
                     preprocessingDocument(ingestDocument);
-                    //publishToNats(ingestDocument, nc);
-                    if (!ingestDocument.getFieldValue("log_type", String.class).equals("workload")) {
-                        publishToNats(ingestDocument, nc);
-                    }
                     return ingestDocument;
                 }
             });
