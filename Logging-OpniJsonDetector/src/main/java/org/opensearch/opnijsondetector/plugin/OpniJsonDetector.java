@@ -23,9 +23,6 @@ import java.io.IOException;
 import java.util.Map;
 import java.util.HashMap;
 import java.util.Date;
-import io.nats.client.Connection;
-import io.nats.client.Nats;
-import io.nats.client.impl.NatsMessage;
 import java.nio.charset.StandardCharsets;
 import java.sql.Timestamp;
 import java.util.UUID;
@@ -47,13 +44,6 @@ import org.opensearch.plugins.IngestPlugin;
 import org.opensearch.plugins.Plugin;
 import org.opensearch.common.SuppressForbidden;
 
-import io.nats.client.Connection;
-import io.nats.client.Nats;
-import io.nats.client.impl.NatsMessage;
-import io.nats.client.NKey;
-import io.nats.client.Options;
-import io.nats.client.AuthHandler;
-
 import java.nio.file.Files;
 import java.nio.file.FileSystem;
 
@@ -64,29 +54,18 @@ import java.lang.NullPointerException;
 
 
 
-public final class OpniPreProcessor extends AbstractProcessor {
+public final class OpniJsonDetector extends AbstractProcessor {
 
-    public static final String TYPE = "opnipre";
+    public static final String TYPE = "opni-json-detector";
 
     private final String field;
     private final String targetField;
-    private final OpniPreprocessingConfig config;
-    private Connection nc;
-    private LogMasker masker;
 
-    public OpniPreProcessor(String tag, String description, String field, String targetField, OpniPreprocessingConfig config)
+    public OpniJsonDetector(String tag, String description, String field, String targetField)
             throws IOException, PrivilegedActionException {
         super(tag, description);
         this.field = field;
         this.targetField = targetField;
-        this.config = config;
-
-        try{
-            nc = connectNats();
-        }catch (PrivilegedActionException e) {
-            throw e;
-        }
-        masker = new LogMasker();
     }
 
     @Override
@@ -120,53 +99,6 @@ public final class OpniPreProcessor extends AbstractProcessor {
         return TYPE;
     }
 
-    private Connection connectNats() throws PrivilegedActionException {
-        /***
-        this method assigns privilege to create a nats connection. 
-        ***/
-        try {
-            return AccessController.doPrivileged(new PrivilegedExceptionAction<Connection>() {
-                @Override
-                public Connection run() throws Exception {
-                    return Nats.connect(getNKeyOption());
-                    // return Nats.connect("nats://x.x.x.x:4222"); // test only
-                }
-            });
-        } catch (PrivilegedActionException e) {
-            throw e;
-        }
-    }
-
-    @SuppressForbidden(reason = "Not config the seed file as env variable for now")
-    private Options getNKeyOption() throws GeneralSecurityException, IOException, NullPointerException{
-        char[] seed = new String(Files.readAllBytes(PathUtils.get(config.getSeedFile())), StandardCharsets.UTF_8).toCharArray();
-        NKey theNKey = NKey.fromSeed(seed);
-        Options options = new Options.Builder().
-                    server(config.getNatsEndpoint()).
-                    authHandler(new AuthHandler(){
-                        public char[] getID() {
-                            try {
-                                return theNKey.getPublicKey();
-                            } catch (GeneralSecurityException|IOException|NullPointerException ex) {
-                                return null;
-                            }
-                        }
-
-                        public byte[] sign(byte[] nonce) {
-                            try {
-                                return theNKey.sign(nonce);
-                            } catch (GeneralSecurityException|IOException|NullPointerException ex) {
-                                return null;
-                            }
-                        }
-
-                        public char[] getJWT() {
-                            return null;
-                        }
-                    }).
-                    build();
-        return options;
-    }
 
     // @SuppressWarnings({"unchecked"})
     @SuppressForbidden(reason = "only use PathUtil to get filename")
@@ -300,24 +232,10 @@ public final class OpniPreProcessor extends AbstractProcessor {
         ingestDocument.setFieldValue("kubernetes_component", kubernetesComponent);
     }
 
-    private void publishToNats (IngestDocument ingestDocument, Connection nc) throws PrivilegedActionException {
-        OpniPayloadProto.Payload payload = OpniPayloadProto.Payload.newBuilder()
-                  .setId(ingestDocument.getFieldValue("_id", String.class))
-                  .setClusterId(ingestDocument.getFieldValue("cluster_id", String.class))
-                  .setLog(ingestDocument.getFieldValue("log", String.class))
-                  .setLogType(ingestDocument.getFieldValue("log_type", String.class)).build();
-        nc.publish("raw_logs", payload.toByteArray() );
-    }
-
-    private String maskLogs(String log) {
-        return masker.mask(log);
-    }
-
     public static final class Factory implements Processor.Factory {
-        private final Environment env;
 
-        public Factory(Environment env) {
-            this.env = env;
+        public Factory() {
+
         }
 
         @Override
@@ -326,9 +244,7 @@ public final class OpniPreProcessor extends AbstractProcessor {
             String field = readStringProperty(TYPE, tag, config, "field");
             String targetField = readStringProperty(TYPE, tag, config, "target_field");
 
-            OpniPreprocessingConfig pluginConfig = new OpniPreprocessingConfig(env);
-            // OpniPreprocessingConfig pluginConfig = null;
-            return new OpniPreProcessor(tag, description, field, targetField, pluginConfig);
+            return new OpniJsonDetector(tag, description, field, targetField);
         }
     }
 }

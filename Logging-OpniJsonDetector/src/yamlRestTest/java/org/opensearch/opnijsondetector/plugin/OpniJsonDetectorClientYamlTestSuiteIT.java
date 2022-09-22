@@ -5,17 +5,18 @@
  * this file be licensed under the Apache-2.0 license or a
  * compatible open source license.
  */
-package org.opensearch.opnipreprocessing.plugin;
+package org.opensearch.opnijsondetector.plugin;
 
-import com.carrotsearch.randomizedtesting.annotations.Name;
-import com.carrotsearch.randomizedtesting.annotations.ParametersFactory;
 import org.opensearch.test.rest.yaml.ClientYamlTestCandidate;
 import org.opensearch.test.rest.yaml.OpenSearchClientYamlSuiteTestCase;
 
+import com.carrotsearch.randomizedtesting.annotations.Name;
+import com.carrotsearch.randomizedtesting.annotations.ParametersFactory;
 
-public class OpniPreprocessingClientYamlTestSuiteIT extends OpenSearchClientYamlSuiteTestCase {
 
-    public OpniPreprocessingClientYamlTestSuiteIT(@Name("yaml") ClientYamlTestCandidate testCandidate) {
+public class OpniJsonDetectorClientYamlTestSuiteIT extends OpenSearchClientYamlSuiteTestCase {
+
+    public OpniJsonDetectorClientYamlTestSuiteIT(@Name("yaml") ClientYamlTestCandidate testCandidate) {
         super(testCandidate);
     }
 

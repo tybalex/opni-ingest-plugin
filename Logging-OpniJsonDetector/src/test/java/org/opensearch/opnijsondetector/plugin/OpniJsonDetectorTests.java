@@ -5,7 +5,7 @@
  * this file be licensed under the Apache-2.0 license or a
  * compatible open source license.
  */
-package org.opensearch.opnipreprocessing.plugin;
+package org.opensearch.opnijsondetector.plugin;
 
 import org.opensearch.test.OpenSearchTestCase;
 import org.opensearch.common.settings.Settings;
@@ -20,7 +20,7 @@ import java.util.HashMap;
 
 import static org.hamcrest.Matchers.hasEntry;
 
-public class OpniPreprocessingTests extends OpenSearchTestCase {
+public class OpniJsonDetectorTests extends OpenSearchTestCase {
     // Add unit tests for your plugin
     public void testThatProcessorWorks() throws Exception {
         // Map<String, Object> data = ingestDocument(config("log", "masked_log"),

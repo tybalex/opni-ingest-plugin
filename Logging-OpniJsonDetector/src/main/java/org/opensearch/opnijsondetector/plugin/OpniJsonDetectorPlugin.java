@@ -5,7 +5,7 @@
  * this file be licensed under the Apache-2.0 license or a
  * compatible open source license.
  */
-package org.opensearch.opnipreprocessing.plugin;
+package org.opensearch.opnijsondetector.plugin;
 
 import java.util.Collections;
 import java.util.Map;
@@ -20,16 +20,15 @@ import org.opensearch.common.SuppressForbidden;
 import java.nio.file.FileSystem;
 
 
-public class OpniPreprocessingPlugin extends Plugin implements IngestPlugin {
+public class OpniJsonDetectorPlugin extends Plugin implements IngestPlugin {
 
-    public OpniPreprocessingPlugin() {
+    public OpniJsonDetectorPlugin() {
 
     }
 
     @Override
-    public Map<String, Processor.Factory> getProcessors(Processor.Parameters parameters) {
+    public Map<String, Processor.Factory> getProcessors() {
 
-        return Collections.singletonMap(OpniPreProcessor.TYPE, new OpniPreProcessor.Factory(parameters.env));
-    }
+        return Collections.singletonMap(OpniJsonDetector.TYPE, new OpniJsonDetector.Factory()); }
 
 }

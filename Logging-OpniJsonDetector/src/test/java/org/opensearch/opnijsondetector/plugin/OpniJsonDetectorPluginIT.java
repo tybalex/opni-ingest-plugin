@@ -5,7 +5,7 @@
  * this file be licensed under the Apache-2.0 license or a
  * compatible open source license.
  */
-package org.opensearch.opnipreprocessing.plugin;
+package org.opensearch.opnijsondetector.plugin;
 
 import com.carrotsearch.randomizedtesting.annotations.ThreadLeakScope;
 import org.apache.http.util.EntityUtils;
@@ -22,11 +22,11 @@ import static org.hamcrest.Matchers.containsString;
 
 @ThreadLeakScope(ThreadLeakScope.Scope.NONE)
 @OpenSearchIntegTestCase.ClusterScope(scope = OpenSearchIntegTestCase.Scope.SUITE)
-public class OpniPreprocessingPluginIT extends OpenSearchIntegTestCase {
+public class OpniJsonDetectorPluginIT extends OpenSearchIntegTestCase {
 
     @Override
     protected Collection<Class<? extends Plugin>> nodePlugins() {
-        return Collections.singletonList(OpniPreprocessingPlugin.class);
+        return Collections.singletonList(OpniJsonDetectorPlugin.class);
     }
 
     public void testPluginInstalled() throws IOException {
