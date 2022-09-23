@@ -19,39 +19,32 @@ import org.opensearch.common.settings.Setting.Property;
 import org.opensearch.common.settings.Settings;
 import org.opensearch.env.Environment;
 
-import java.io.IOException;
-import java.util.Map;
-import java.util.HashMap;
-import java.util.Date;
-import java.nio.charset.StandardCharsets;
-import java.sql.Timestamp;
-import java.util.UUID;
-import org.opensearch.common.io.PathUtils;
 
-
-import static org.opensearch.ingest.ConfigurationUtils.readBooleanProperty;
-import static org.opensearch.ingest.ConfigurationUtils.readOptionalStringProperty;
-import static org.opensearch.ingest.ConfigurationUtils.readStringProperty;
 
 import java.security.AccessController;
 import java.security.PrivilegedExceptionAction;
 import java.security.PrivilegedActionException;
 import java.security.PrivilegedAction;
 
-import org.opensearch.OpenSearchException;
-import org.opensearch.ingest.Processor;
-import org.opensearch.plugins.IngestPlugin;
-import org.opensearch.plugins.Plugin;
-import org.opensearch.common.SuppressForbidden;
-
-import java.nio.file.Files;
-import java.nio.file.FileSystem;
-
+import static org.opensearch.ingest.ConfigurationUtils.readBooleanProperty;
+import static org.opensearch.ingest.ConfigurationUtils.readOptionalStringProperty;
+import static org.opensearch.ingest.ConfigurationUtils.readStringProperty;
 
 import java.io.IOException;
 import java.security.GeneralSecurityException;
 import java.lang.NullPointerException;
+import java.util.Set;
+import java.util.Map;
+import java.util.HashSet;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+import java.util.Collections;
+import java.util.Locale;
 
+import com.google.gson.JsonParser;
+import com.google.gson.JsonSyntaxException;
+import com.google.gson.JsonParseException;
+import com.google.gson.JsonObject;
 
 
 public final class OpniJsonDetector extends AbstractProcessor {
@@ -60,12 +53,21 @@ public final class OpniJsonDetector extends AbstractProcessor {
 
     private final String field;
     private final String targetField;
+    private Pattern jsonObjectPattern;
+    private static final Set<String> LOGFIELDS;
+    static {
+        Set<String> tmpSet = new HashSet();
+        tmpSet.add("log");
+        tmpSet.add("message");
+        LOGFIELDS = Collections.unmodifiableSet(tmpSet);
+    }
 
     public OpniJsonDetector(String tag, String description, String field, String targetField)
             throws IOException, PrivilegedActionException {
         super(tag, description);
         this.field = field;
         this.targetField = targetField;
+        this.jsonObjectPattern = Pattern.compile("\\{(?:[^{}]|(\\{(?:[^{}]|((\\{(?:[^{}]|())*\\})))*\\}))*\\}");   
     }
 
     @Override
@@ -75,9 +77,7 @@ public final class OpniJsonDetector extends AbstractProcessor {
             return AccessController.doPrivileged(new PrivilegedExceptionAction<IngestDocument>() {
                 @Override
                 public IngestDocument run() throws Exception {
-                    String generated_id = getRandomID();
-                    ingestDocument.setFieldValue("_id", generated_id);
-                    preprocessingDocument(ingestDocument);
+                    JsonExtractionFromLog(ingestDocument);
                     return ingestDocument;
                 }
             });
@@ -86,146 +86,52 @@ public final class OpniJsonDetector extends AbstractProcessor {
         }         
     }
 
-    public String getRandomID() {
-        return UUID.randomUUID().toString();
+
+    // @SuppressWarnings({"unchecked"})
+    // @SuppressForbidden(reason = "allow #toLowerCase() usage for now")
+    private void JsonExtractionFromLog(IngestDocument ingestDocument) {
+        /**
+         * simply detect and extract nested or embedded json in log strings
+        **/
+        String parsedLog = ingestDocument.getFieldValue("log", String.class);
+        Matcher matchedRes = matchJsonInString(parsedLog);
+        String severity = "";
+        String matchedJson = "";
+        if (matchedRes.find()) { // there's json
+            if (matchedRes.start()==0 && matchedRes.end()==parsedLog.length()) {
+                JsonObject parsedJson;
+                try {
+                    parsedJson= JsonParser.parseString(parsedLog).getAsJsonObject();
+                } catch ( JsonSyntaxException e) {
+                    parsedJson = null;
+                }
+                if (parsedJson != null) {
+                    matchedJson = parsedJson.toString();
+                    for (String k : parsedJson.keySet()) {
+                        if (LOGFIELDS.contains(k.toLowerCase(Locale.ENGLISH))) {
+                            // do something
+                            break;
+                        }
+                    }
+                    for (String k : parsedJson.keySet()) {
+                        if (k.toLowerCase(Locale.ENGLISH).equals("severity")) {
+                            severity = parsedJson.get(k).getAsString();
+                        }
+                    }
+                }
+            }
+        }
+        ingestDocument.setFieldValue("log.severity", severity);
+        ingestDocument.setFieldValue("log.jsonObject", matchedJson);
+    }
+
+    private Matcher matchJsonInString(String str) {
+        return this.jsonObjectPattern.matcher(str);
     }
 
     @Override
     public String getType() {
         return TYPE;
-    }
-
-
-    // @SuppressWarnings({"unchecked"})
-    @SuppressForbidden(reason = "only use PathUtil to get filename")
-    private void preprocessingDocument(IngestDocument ingestDocument) {
-        /**
-        preprocessing documents:
-        0. initialize a few fields for downstream AI services.
-        1. normalize time field
-        2. normalize log field
-        3. identify controlplane/rancher logs
-        **/
-        ingestDocument.setFieldValue("template_matched", "");
-        ingestDocument.setFieldValue("anomaly_level", "");
-        long unixTime = System.currentTimeMillis();
-        ingestDocument.setFieldValue("ingest_at", ((Date)new Timestamp(unixTime)).toString());
-
-        // normalize field `time`
-        if (!ingestDocument.hasField("time")){
-            if (ingestDocument.hasField("timestamp")) {
-                ingestDocument.setFieldValue("time", ingestDocument.getFieldValue("timestamp", String.class));
-                ingestDocument.setFieldValue("raw_ts", "yes");
-            }
-            else {
-                ingestDocument.setFieldValue("time", Long.toString(unixTime));
-                ingestDocument.setFieldValue("raw_ts", "no");
-            }
-        }
-        else {
-            ingestDocument.setFieldValue("raw_ts", "raw time");
-        }
-        if (ingestDocument.hasField("timestamp")) {
-            ingestDocument.removeField("timestamp"); 
-        }
-
-        // If it's an event we don't need to do any further processing
-        if (ingestDocument.hasField("log_type") && ingestDocument.getFieldValue("log_type", String.class).equals("event")) {
-            return;
-        }
-
-        // normalize field `log`
-        String actualLog = "NONE";
-        if (!ingestDocument.hasField("log")) {
-            if (ingestDocument.hasField("message")) {
-                actualLog = ingestDocument.getFieldValue("message", String.class);              
-                ingestDocument.removeField("message");
-                ingestDocument.setFieldValue("log_source_field", "message");
-            }
-            else if (ingestDocument.hasField("MESSAGE")) {
-                actualLog = ingestDocument.getFieldValue("MESSAGE", String.class);
-                ingestDocument.removeField("MESSAGE");
-                ingestDocument.setFieldValue("log_source_field", "MESSAGE");
-            }
-            else {
-                ingestDocument.setFieldValue("log_source_field", "NONE");
-            }
-        }
-        else {
-            actualLog = ingestDocument.getFieldValue("log", String.class);
-            ingestDocument.setFieldValue("log_source_field", "log");
-        }
-        actualLog = actualLog.trim();
-        ingestDocument.setFieldValue("log", actualLog);
-
-        // Don't do any further processing if the logs come from the support agent
-        if (ingestDocument.hasField("agent") && ingestDocument.getFieldValue("agent", String.class).equals("support")) {
-            return;
-        }
-
-        // normalize field log_type and kubernetesComponent conponent
-        String logType = "workload";
-        String kubernetesComponent = "";
-        
-        if (ingestDocument.hasField("filename")) {
-            String controlPlaneName = ingestDocument.getFieldValue("filename", String.class);
-            if (controlPlaneName.contains("rke/log/etcd") ||
-                controlPlaneName.contains("rke/log/kubelet") ||
-                controlPlaneName.contains("/rke/log/kube-apiserver") ||
-                controlPlaneName.contains("rke/log/kube-controller-manager") ||
-                controlPlaneName.contains("rke/log/kube-proxy") ||
-                controlPlaneName.contains("rke/log/kube-scheduler") 
-                ) { 
-                logType = "controlplane";
-                controlPlaneName = PathUtils.get(controlPlaneName).getFileName().toString();
-                kubernetesComponent = (controlPlaneName.split("_"))[0];
-            }
-            else if (controlPlaneName.contains("k3s.log")){
-                logType = "controlplane";
-                kubernetesComponent = "k3s";
-            }
-            else if (controlPlaneName.contains("rke2/agent/logs/kubelet")){
-                logType = "controlplane";
-                kubernetesComponent = "kubelet";
-            }
-        }  
-        else if (ingestDocument.hasField("COMM")){
-            String controlPlaneName = ingestDocument.getFieldValue("COMM", String.class);
-            if (controlPlaneName.contains("kubelet") ||
-                controlPlaneName.contains("k3s-agent") ||
-                controlPlaneName.contains("k3s-server") ||
-                controlPlaneName.contains("rke2-agent") ||
-                controlPlaneName.contains("rke2-server")
-                ){
-                logType = "controlplane";
-                kubernetesComponent = (controlPlaneName.split("-"))[0];
-            }
-        }
-        else {
-            if (ingestDocument.hasField("kubernetes")) {// kubernetes.labels.tier
-                Map<String, Object> kubernetes = ingestDocument.getFieldValue("kubernetes", Map.class);
-                if (kubernetes.containsKey("labels")) {
-                    HashMap<String, String> labels = (HashMap)kubernetes.get("labels");
-                    if (labels.containsKey("tier")) {
-                        String controlPlaneName = labels.get("tier");
-                        if (controlPlaneName.contains("control-plane")){
-                            logType = "controlplane";
-                            kubernetesComponent = "control-plane";
-                        }
-                    }
-                }
-                if (kubernetes.containsKey("container_image") && ((String)kubernetes.get("container_image")).contains("rancher/rancher") &&
-                    ingestDocument.hasField("deployment") && ingestDocument.getFieldValue("deployment", String.class).equals("rancher")  ) {
-                    logType = "rancher";
-                }
-                if (kubernetes.containsKey("container_image") && ((String)kubernetes.get("container_image")).contains("longhornio-")) {
-                    logType = "longhorn";
-                }
-                ingestDocument.setFieldValue("pod_name", ((String)kubernetes.get("pod_name")));
-            }        
-        }  
-        ingestDocument.setFieldValue("log_type", logType);
-        ingestDocument.setFieldValue("kubernetes_component", kubernetesComponent);
     }
 
     public static final class Factory implements Processor.Factory {
