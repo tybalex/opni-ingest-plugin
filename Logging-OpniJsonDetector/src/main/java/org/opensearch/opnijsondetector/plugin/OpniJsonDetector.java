@@ -121,8 +121,8 @@ public final class OpniJsonDetector extends AbstractProcessor {
                 }
             }
         }
-        ingestDocument.setFieldValue("log.severity", severity);
-        ingestDocument.setFieldValue("log.jsonObject", matchedJson);
+        ingestDocument.setFieldValue("log_severity", severity);
+        ingestDocument.setFieldValue("log_jsonObject", matchedJson);
     }
 
     private Matcher matchJsonInString(String str) {

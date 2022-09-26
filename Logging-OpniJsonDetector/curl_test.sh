@@ -3,7 +3,7 @@ curl -XPUT localhost:9200/_ingest/pipeline/my_simple_pipeline \
 -d '{
     "processors": [
         {
-            "opnipre": {
+            "opni-json-detector": {
                 "field": "log",
                 "target_field": "masked_log"
             }
