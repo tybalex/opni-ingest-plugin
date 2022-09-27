@@ -77,7 +77,13 @@ public final class OpniJsonDetector extends AbstractProcessor {
             return AccessController.doPrivileged(new PrivilegedExceptionAction<IngestDocument>() {
                 @Override
                 public IngestDocument run() throws Exception {
+                    // long startTime = System.nanoTime();
+
                     JsonExtractionFromLog(ingestDocument);
+
+                    // long endTime = System.nanoTime();
+                    // ingestDocument.setFieldValue("json_extraction_time_ms", (endTime-startTime) / 1000000.0);
+                    
                     return ingestDocument;
                 }
             });
@@ -101,6 +107,7 @@ public final class OpniJsonDetector extends AbstractProcessor {
             if (matchedRes.start()==0 && matchedRes.end()==parsedLog.length()) {
                 JsonObject parsedJson;
                 try {
+                    // TODO -- https://jsoniter.com might be faster than Gson
                     parsedJson= JsonParser.parseString(parsedLog).getAsJsonObject();
                 } catch ( JsonSyntaxException e) {
                     parsedJson = null;

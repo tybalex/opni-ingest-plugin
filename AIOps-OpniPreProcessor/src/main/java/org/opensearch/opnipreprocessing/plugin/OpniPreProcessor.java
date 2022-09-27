@@ -102,6 +102,8 @@ public final class OpniPreProcessor extends AbstractProcessor {
             return AccessController.doPrivileged(new PrivilegedExceptionAction<IngestDocument>() {
                 @Override
                 public IngestDocument run() throws Exception {
+                    // long startTime = System.nanoTime();
+
                     String generated_id = getRandomID();
                     ingestDocument.setFieldValue("_id", generated_id);
                     preprocessingDocument(ingestDocument);
@@ -109,6 +111,10 @@ public final class OpniPreProcessor extends AbstractProcessor {
                     if (!ingestDocument.getFieldValue("log_type", String.class).equals("workload")) {
                         publishToNats(ingestDocument, nc);
                     }
+
+                    // long endTime = System.nanoTime();
+                    // ingestDocument.setFieldValue("aiops_extraction_time_ms", (endTime-startTime) / 1000000.0);
+                    
                     return ingestDocument;
                 }
             });
