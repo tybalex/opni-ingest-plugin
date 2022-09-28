@@ -18,7 +18,7 @@ import java.io.IOException;
 import java.util.Collection;
 import java.util.Collections;
 
-import static org.hamcrest.Matchers.containsString;
+// import static org.hamcrest.Matchers.containsString;
 
 @ThreadLeakScope(ThreadLeakScope.Scope.NONE)
 @OpenSearchIntegTestCase.ClusterScope(scope = OpenSearchIntegTestCase.Scope.SUITE)
@@ -32,8 +32,8 @@ public class OpniJsonDetectorPluginIT extends OpenSearchIntegTestCase {
     public void testPluginInstalled() throws IOException {
         Response response = createRestClient().performRequest(new Request("GET", "/_cat/plugins"));
         String body = EntityUtils.toString(response.getEntity());
-
         logger.info("response body: {}", body);
-        assertThat(body, containsString("opnijsondetector"));
+        // assertThat(body, containsString("opnijsondetector"));
+        assertTrue(body.contains("opnijsondetector"));
     }
 }

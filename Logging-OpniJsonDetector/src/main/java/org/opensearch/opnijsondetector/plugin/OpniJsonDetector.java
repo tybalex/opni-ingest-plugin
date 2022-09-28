@@ -43,7 +43,6 @@ import java.util.Locale;
 
 import com.google.gson.JsonParser;
 import com.google.gson.JsonSyntaxException;
-import com.google.gson.JsonParseException;
 import com.google.gson.JsonObject;
 
 
@@ -56,7 +55,7 @@ public final class OpniJsonDetector extends AbstractProcessor {
     private Pattern jsonObjectPattern;
     private static final Set<String> LOGFIELDS;
     static {
-        Set<String> tmpSet = new HashSet();
+        Set<String> tmpSet = new HashSet<>();
         tmpSet.add("log");
         tmpSet.add("message");
         LOGFIELDS = Collections.unmodifiableSet(tmpSet);
