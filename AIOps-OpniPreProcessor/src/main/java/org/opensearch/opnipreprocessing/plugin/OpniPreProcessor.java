@@ -102,7 +102,7 @@ public final class OpniPreProcessor extends AbstractProcessor {
             return AccessController.doPrivileged(new PrivilegedExceptionAction<IngestDocument>() {
                 @Override
                 public IngestDocument run() throws Exception {
-                    // long startTime = System.nanoTime();
+                    long startTime = System.nanoTime();
 
                     String generated_id = getRandomID();
                     ingestDocument.setFieldValue("_id", generated_id);
@@ -112,8 +112,8 @@ public final class OpniPreProcessor extends AbstractProcessor {
                         publishToNats(ingestDocument, nc);
                     }
 
-                    // long endTime = System.nanoTime();
-                    // ingestDocument.setFieldValue("aiops_extraction_time_ms", (endTime-startTime) / 1000000.0);
+                    long endTime = System.nanoTime();
+                    ingestDocument.setFieldValue("aiops_extraction_time_ms", (endTime-startTime) / 1000000.0);
                     
                     return ingestDocument;
                 }

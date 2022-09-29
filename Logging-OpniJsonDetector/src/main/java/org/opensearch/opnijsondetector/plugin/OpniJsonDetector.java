@@ -39,7 +39,9 @@ import java.util.HashSet;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.Locale;
+import java.util.Iterator;
 
 import com.google.gson.JsonParser;
 import com.google.gson.JsonSyntaxException;
@@ -53,6 +55,7 @@ public final class OpniJsonDetector extends AbstractProcessor {
     private final String field;
     private final String targetField;
     private Pattern jsonObjectPattern;
+    private String[] jsonPresetKeywords = {"severity", "level", "time"};
     private static final Set<String> LOGFIELDS;
     static {
         Set<String> tmpSet = new HashSet<>();
@@ -66,7 +69,7 @@ public final class OpniJsonDetector extends AbstractProcessor {
         super(tag, description);
         this.field = field;
         this.targetField = targetField;
-        this.jsonObjectPattern = Pattern.compile("\\{(?:[^{}]|(\\{(?:[^{}]|((\\{(?:[^{}]|())*\\})))*\\}))*\\}");   
+        this.jsonObjectPattern = Pattern.compile("\\{(?:[^{}]|(\\{(?:[^{}]|((\\{(?:[^{}]|())*\\})))*\\}))*\\}");
     }
 
     @Override
@@ -76,12 +79,12 @@ public final class OpniJsonDetector extends AbstractProcessor {
             return AccessController.doPrivileged(new PrivilegedExceptionAction<IngestDocument>() {
                 @Override
                 public IngestDocument run() throws Exception {
-                    // long startTime = System.nanoTime();
+                    long startTime = System.nanoTime();
 
                     JsonExtractionFromLog(ingestDocument);
 
-                    // long endTime = System.nanoTime();
-                    // ingestDocument.setFieldValue("json_extraction_time_ms", (endTime-startTime) / 1000000.0);
+                    long endTime = System.nanoTime();
+                    ingestDocument.setFieldValue("json_extraction_time_ms", (endTime-startTime) / 1000000.0);
                     
                     return ingestDocument;
                 }
@@ -91,16 +94,36 @@ public final class OpniJsonDetector extends AbstractProcessor {
         }         
     }
 
+    private JsonObject jsonFlatten (JsonObject jsonObject, String parentName, JsonObject resJsonObject) {
+        /*
+         * This method flatten nested jsonobject.
+         */
+        String delimiter = "_";
+        Set<String> keys = jsonObject.keySet();
+        Iterator<?> keysIterator = keys.iterator ();
+        while( keysIterator.hasNext ()) {
+            String key = (String) keysIterator.next ();
+            String thisName = parentName + key;
+            
+            if (jsonObject.get (key) instanceof JsonObject) {
+                resJsonObject = jsonFlatten ((jsonObject.get (key)).getAsJsonObject(),thisName + delimiter, resJsonObject);
+            } else {
+                resJsonObject.add(thisName, jsonObject.get(key));
+            }
+        }
+        return resJsonObject;
+    }
+
 
     // @SuppressWarnings({"unchecked"})
     // @SuppressForbidden(reason = "allow #toLowerCase() usage for now")
     private void JsonExtractionFromLog(IngestDocument ingestDocument) {
         /**
-         * simply detect and extract nested or embedded json in log strings
+         * detect and extract nested or embedded json in log strings
         **/
         String parsedLog = ingestDocument.getFieldValue("log", String.class);
         Matcher matchedRes = matchJsonInString(parsedLog);
-        String severity = "";
+        Map<String, String> jsonExtractKeywordsMap = new HashMap<>();
         String matchedJson = "";
         if (matchedRes.find()) { // there's json
             if (matchedRes.start()==0 && matchedRes.end()==parsedLog.length()) {
@@ -108,26 +131,27 @@ public final class OpniJsonDetector extends AbstractProcessor {
                 try {
                     // TODO -- https://jsoniter.com might be faster than Gson
                     parsedJson= JsonParser.parseString(parsedLog).getAsJsonObject();
+                    parsedJson = jsonFlatten(parsedJson, "", new JsonObject());
                 } catch ( JsonSyntaxException e) {
                     parsedJson = null;
                 }
                 if (parsedJson != null) {
                     matchedJson = parsedJson.toString();
                     for (String k : parsedJson.keySet()) {
-                        if (LOGFIELDS.contains(k.toLowerCase(Locale.ENGLISH))) {
-                            // do something
-                            break;
+                        String lowerK = k.toLowerCase(Locale.ENGLISH);
+                        for (String presetKeyword : this.jsonPresetKeywords) {
+                            if (lowerK.equals(presetKeyword)) {
+                                jsonExtractKeywordsMap.put(presetKeyword, parsedJson.get(k).getAsString());
+                            }
                         }
-                    }
-                    for (String k : parsedJson.keySet()) {
-                        if (k.toLowerCase(Locale.ENGLISH).equals("severity")) {
-                            severity = parsedJson.get(k).getAsString();
-                        }
+                        
                     }
                 }
             }
         }
-        ingestDocument.setFieldValue("log_severity", severity);
+        for (String key : jsonExtractKeywordsMap.keySet()) {
+            ingestDocument.setFieldValue("log_" + key, jsonExtractKeywordsMap.get(key));
+        }      
         ingestDocument.setFieldValue("log_jsonObject", matchedJson);
     }
 
