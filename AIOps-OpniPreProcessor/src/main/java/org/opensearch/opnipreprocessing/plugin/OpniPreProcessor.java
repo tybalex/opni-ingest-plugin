@@ -90,13 +90,13 @@ public final class OpniPreProcessor extends AbstractProcessor {
 
     @Override
     public IngestDocument execute(IngestDocument ingestDocument) throws Exception {
-        // try {
-        //     if (isPendingDelete(ingestDocument, nc)) {
-        //         throw new DeletePendingException(clusterID(ingestDocument));
-        //     }
-        // } catch (Exception e) {
-        //     throw new RuntimeException(e);
-        // }
+        try {
+            if (isPendingDelete(ingestDocument, nc)) {
+                throw new DeletePendingException(clusterID(ingestDocument));
+            }
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
         // main entry
         try {
             return AccessController.doPrivileged(new PrivilegedExceptionAction<IngestDocument>() {
@@ -186,61 +186,15 @@ public final class OpniPreProcessor extends AbstractProcessor {
         /**
         preprocessing documents:
         0. initialize a few fields for downstream AI services.
-        1. normalize time field
-        2. normalize log field
-        3. identify controlplane/rancher logs
+        1. identify controlplane/rancher logs
         **/
         ingestDocument.setFieldValue("template_matched", "");
-        ingestDocument.setFieldValue("anomaly_level", "");
-        long unixTime = System.currentTimeMillis();
-        ingestDocument.setFieldValue("ingest_at", ((Date)new Timestamp(unixTime)).toString());
-
-        // normalize field `time`
-        if (!ingestDocument.hasField("time")){
-            if (ingestDocument.hasField("timestamp")) {
-                ingestDocument.setFieldValue("time", ingestDocument.getFieldValue("timestamp", String.class));
-                ingestDocument.setFieldValue("raw_ts", "yes");
-            }
-            else {
-                ingestDocument.setFieldValue("time", Long.toString(unixTime));
-                ingestDocument.setFieldValue("raw_ts", "no");
-            }
-        }
-        else {
-            ingestDocument.setFieldValue("raw_ts", "raw time");
-        }
-        if (ingestDocument.hasField("timestamp")) {
-            ingestDocument.removeField("timestamp"); 
-        }
+        ingestDocument.setFieldValue("anomaly_level", ""); 
 
         // If it's an event we don't need to do any further processing
         if (ingestDocument.hasField("log_type") && ingestDocument.getFieldValue("log_type", String.class).equals("event")) {
             return;
         }
-
-        // normalize field `log`
-        String actualLog = "NONE";
-        if (!ingestDocument.hasField("log")) {
-            if (ingestDocument.hasField("message")) {
-                actualLog = ingestDocument.getFieldValue("message", String.class);              
-                ingestDocument.removeField("message");
-                ingestDocument.setFieldValue("log_source_field", "message");
-            }
-            else if (ingestDocument.hasField("MESSAGE")) {
-                actualLog = ingestDocument.getFieldValue("MESSAGE", String.class);
-                ingestDocument.removeField("MESSAGE");
-                ingestDocument.setFieldValue("log_source_field", "MESSAGE");
-            }
-            else {
-                ingestDocument.setFieldValue("log_source_field", "NONE");
-            }
-        }
-        else {
-            actualLog = ingestDocument.getFieldValue("log", String.class);
-            ingestDocument.setFieldValue("log_source_field", "log");
-        }
-        actualLog = actualLog.trim();
-        ingestDocument.setFieldValue("log", actualLog);
 
         // Don't do any further processing if the logs come from the support agent
         if (ingestDocument.hasField("agent") && ingestDocument.getFieldValue("agent", String.class).equals("support")) {

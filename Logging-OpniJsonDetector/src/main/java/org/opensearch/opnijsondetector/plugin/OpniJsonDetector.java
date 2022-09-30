@@ -23,6 +23,7 @@ import org.opensearch.env.Environment;
 
 import java.security.AccessController;
 import java.security.PrivilegedExceptionAction;
+import java.sql.Timestamp;
 import java.security.PrivilegedActionException;
 import java.security.PrivilegedAction;
 
@@ -39,6 +40,7 @@ import java.util.HashSet;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.Collections;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.Locale;
 import java.util.Iterator;
@@ -50,7 +52,7 @@ import com.google.gson.JsonObject;
 
 public final class OpniJsonDetector extends AbstractProcessor {
 
-    public static final String TYPE = "opni-json-detector";
+    public static final String TYPE = "opni-logging-processor";
 
     private final String field;
     private final String targetField;
@@ -81,7 +83,8 @@ public final class OpniJsonDetector extends AbstractProcessor {
                 public IngestDocument run() throws Exception {
                     long startTime = System.nanoTime();
 
-                    JsonExtractionFromLog(ingestDocument);
+                    normalizeDocument(ingestDocument);
+                    jsonExtractionFromLog(ingestDocument);
 
                     long endTime = System.nanoTime();
                     ingestDocument.setFieldValue("json_extraction_time_ms", (endTime-startTime) / 1000000.0);
@@ -92,6 +95,63 @@ public final class OpniJsonDetector extends AbstractProcessor {
         } catch (PrivilegedActionException e) {
             throw e;
         }         
+    }
+
+    private void normalizeDocument(IngestDocument ingestDocument) {
+        /*
+         * this method normalize:
+        1. normalize time field
+        2. normalize log field
+         */
+        
+        // normalize field `time`
+        long unixTime = System.currentTimeMillis();
+        ingestDocument.setFieldValue("ingest_at", ((Date)new Timestamp(unixTime)).toString());
+        if (!ingestDocument.hasField("time")){
+            if (ingestDocument.hasField("timestamp")) {
+                ingestDocument.setFieldValue("time", ingestDocument.getFieldValue("timestamp", String.class));
+                ingestDocument.setFieldValue("raw_ts", "yes");
+            }
+            else {
+                ingestDocument.setFieldValue("time", Long.toString(unixTime));
+                ingestDocument.setFieldValue("raw_ts", "no");
+            }
+        }
+        else {
+            ingestDocument.setFieldValue("raw_ts", "raw time");
+        }
+        if (ingestDocument.hasField("timestamp")) {
+            ingestDocument.removeField("timestamp"); 
+        }
+
+        // If it's an event we don't need to do any further processing
+        if (ingestDocument.hasField("log_type") && ingestDocument.getFieldValue("log_type", String.class).equals("event")) {
+            return;
+        }
+
+        // normalize field `log`
+        String actualLog = "NONE";
+        if (!ingestDocument.hasField("log")) {
+            if (ingestDocument.hasField("message")) {
+                actualLog = ingestDocument.getFieldValue("message", String.class);              
+                ingestDocument.removeField("message");
+                ingestDocument.setFieldValue("log_source_field", "message");
+            }
+            else if (ingestDocument.hasField("MESSAGE")) {
+                actualLog = ingestDocument.getFieldValue("MESSAGE", String.class);
+                ingestDocument.removeField("MESSAGE");
+                ingestDocument.setFieldValue("log_source_field", "MESSAGE");
+            }
+            else {
+                ingestDocument.setFieldValue("log_source_field", "NONE");
+            }
+        }
+        else {
+            actualLog = ingestDocument.getFieldValue("log", String.class);
+            ingestDocument.setFieldValue("log_source_field", "log");
+        }
+        actualLog = actualLog.trim();
+        ingestDocument.setFieldValue("log", actualLog);
     }
 
     private JsonObject jsonFlatten (JsonObject jsonObject, String parentName, JsonObject resJsonObject) {
@@ -117,7 +177,7 @@ public final class OpniJsonDetector extends AbstractProcessor {
 
     // @SuppressWarnings({"unchecked"})
     // @SuppressForbidden(reason = "allow #toLowerCase() usage for now")
-    private void JsonExtractionFromLog(IngestDocument ingestDocument) {
+    private void jsonExtractionFromLog(IngestDocument ingestDocument) {
         /**
          * detect and extract nested or embedded json in log strings
         **/

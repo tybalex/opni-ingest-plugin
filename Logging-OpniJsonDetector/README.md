@@ -6,7 +6,7 @@
 ./gradlew build
 ```
 
-`build/distributions/opnipreprocessing.zip` is generated.
+`build/distributions/opnijsondetector.zip` is generated.
 
 2. (For Dev): Install OpenSearch and build a local artifact for the integration tests and build tools ([Learn more here](https://github.com/opensearch-project/opensearch-plugins/blob/main/BUILDING.md)):
 
@@ -48,7 +48,7 @@ PUT _ingest/pipeline/opni-ingest-pipeline
 {
     "processors": [
         {
-            "opnipre": {
+            "opni-logging-processor": {
                 "field": "log",
                 "target_field": "masked_log"
             }
@@ -66,6 +66,27 @@ PUT /logs/_settings
 }
 ```
 Similarly you can also attach the pipeline to an index_template.
+
+To create a pipeline with 2 plugins:
+```
+PUT _ingest/pipeline/opni-ingest-pipeline
+{
+    "processors": [
+        {
+            "opni-logging-processor": {
+                "field": "log",
+                "target_field": "masked_log"
+            }
+        },
+        {
+            "opnipre": {
+                "field": "log",
+                "target_field": "masked_log"
+            }
+        }
+    ]
+}
+```
 
 
 ## License
