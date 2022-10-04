@@ -24,9 +24,14 @@ jobs:
 
     - name: Build and Run Tests
       run: |
+          cd Logging-OpniJsonDetector
           ./gradlew build
+          cd ..
+          cd AIOps-OpniPreProcessor/
+          ./gradlew build
+          cd ..
     - uses: softprops/action-gh-release@v1
       if: startsWith(github.ref, 'refs/tags/')
       with:
-        files: build/distributions/opnipreprocessing.zip
+        files: [Logging-OpniJsonDetector/build/distributions/opnijsondetector.zip, AIOps-OpniPreProcessor/build/distributions/opnipreprocessing.zip]
 
