@@ -201,6 +201,20 @@ public final class OpniPreProcessor extends AbstractProcessor {
             return;
         }
 
+        // normalize log field
+        if (!ingestDocument.hasField("log")) {
+            String log = "";
+            if (ingestDocument.hasField("message")) {
+                log = ingestDocument.getFieldValue("message", String.class);
+                ingestDocument.removeField("message");
+            }
+            if (ingestDocument.hasField("MESSAGE")) {
+                log = ingestDocument.getFieldValue("MESSAGE", String.class);
+                ingestDocument.removeField("MESSAGE");
+            }
+            ingestDocument.setFieldValue("log", log);
+        }
+
         // normalize field log_type and kubernetesComponent conponent
         String logType = "workload";
         String kubernetesComponent = "";
