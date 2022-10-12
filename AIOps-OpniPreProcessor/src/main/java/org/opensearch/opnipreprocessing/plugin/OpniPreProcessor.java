@@ -107,10 +107,7 @@ public final class OpniPreProcessor extends AbstractProcessor {
                     String generated_id = getRandomID();
                     ingestDocument.setFieldValue("_id", generated_id);
                     preprocessingDocument(ingestDocument);
-                    //publishToNats(ingestDocument, nc);
-                    if (!ingestDocument.getFieldValue("log_type", String.class).equals("workload")) {
-                        publishToNats(ingestDocument, nc);
-                    }
+                    publishToNats(ingestDocument, nc);
 
                     long endTime = System.nanoTime();
                     ingestDocument.setFieldValue("aiops_extraction_time_ms", (endTime-startTime) / 1000000.0);
