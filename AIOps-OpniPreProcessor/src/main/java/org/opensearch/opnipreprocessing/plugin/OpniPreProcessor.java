@@ -308,7 +308,11 @@ public final class OpniPreProcessor extends AbstractProcessor {
                   .setId(ingestDocument.getFieldValue("_id", String.class))
                   .setClusterId(ingestDocument.getFieldValue("cluster_id", String.class))
                   .setLog(ingestDocument.getFieldValue("log", String.class))
-                  .setLogType(ingestDocument.getFieldValue("log_type", String.class)).build();
+                  .setLogType(ingestDocument.getFieldValue("log_type", String.class))
+                  .setPodName(ingestDocument.getFieldValue("pod_name", String.class))
+                  .setNamespaceName(ingestDocument.getFieldValue("namespace_name", String.class))
+                  .setDeployment(ingestDocument.getFieldValue("deployment", String.class))
+                  .setService(ingestDocument.getFieldValue("service", String.class)).build();
         nc.publish("raw_logs", payload.toByteArray() );
     }
 
