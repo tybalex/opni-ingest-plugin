@@ -217,8 +217,6 @@ public final class OpniPreProcessor extends AbstractProcessor {
         String kubernetesComponent = "";
         String podName = "";
         String namespaceName = "";
-        String deployment = "";
-        String service = "";
         
         if (ingestDocument.hasField("filename")) {
             String controlPlaneName = ingestDocument.getFieldValue("filename", String.class);
@@ -283,18 +281,16 @@ public final class OpniPreProcessor extends AbstractProcessor {
                 } 
             }        
         }
-        if (ingestDocument.hasField("deployment")) {
-            deployment = ingestDocument.getFieldValue("deployment", String.class);
+        if (!ingestDocument.hasField("deployment")) {
+            ingestDocument.setFieldValue("deployment", "");
         }
-        if (ingestDocument.hasField("service")) {
-            service = ingestDocument.getFieldValue("service", String.class);
+        if (!ingestDocument.hasField("service")) {
+            ingestDocument.setFieldValue("service", "");
         }     
         ingestDocument.setFieldValue("log_type", logType);
         ingestDocument.setFieldValue("kubernetes_component", kubernetesComponent);
         ingestDocument.setFieldValue("pod_name", podName);
         ingestDocument.setFieldValue("namespace_name", namespaceName);
-        ingestDocument.setFieldValue("deployment", deployment);
-        ingestDocument.setFieldValue("service", service);
     }
 
     private void publishToNats (IngestDocument ingestDocument, Connection nc) throws PrivilegedActionException {
