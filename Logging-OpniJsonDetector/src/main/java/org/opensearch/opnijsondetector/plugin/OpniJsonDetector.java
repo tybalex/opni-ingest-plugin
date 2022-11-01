@@ -87,7 +87,7 @@ public final class OpniJsonDetector extends AbstractProcessor {
                     jsonExtractionFromLog(ingestDocument);
 
                     long endTime = System.nanoTime();
-                    ingestDocument.setFieldValue("json_extraction_time_ms", (endTime-startTime) / 1000000.0);
+                    // ingestDocument.setFieldValue("json_extraction_time_ms", (endTime-startTime) / 1000000.0);
                     
                     return ingestDocument;
                 }
