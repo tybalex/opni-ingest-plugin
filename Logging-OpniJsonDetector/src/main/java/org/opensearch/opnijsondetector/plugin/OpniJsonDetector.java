@@ -54,8 +54,6 @@ public final class OpniJsonDetector extends AbstractProcessor {
 
     public static final String TYPE = "opni-logging-processor";
 
-    private final String field;
-    private final String targetField;
     private Pattern jsonObjectPattern;
     private String[] jsonPresetKeywords = {"severity", "level", "time"};
     private static final Set<String> LOGFIELDS;
@@ -66,11 +64,9 @@ public final class OpniJsonDetector extends AbstractProcessor {
         LOGFIELDS = Collections.unmodifiableSet(tmpSet);
     }
 
-    public OpniJsonDetector(String tag, String description, String field, String targetField)
+    public OpniJsonDetector(String tag, String description)
             throws IOException, PrivilegedActionException {
         super(tag, description);
-        this.field = field;
-        this.targetField = targetField;
         this.jsonObjectPattern = Pattern.compile("\\{(?:[^{}]|(\\{(?:[^{}]|((\\{(?:[^{}]|())*\\})))*\\}))*\\}");
     }
 
@@ -233,10 +229,7 @@ public final class OpniJsonDetector extends AbstractProcessor {
         @Override
         public Processor create(Map<String, Processor.Factory> processorFactories, String tag, String description,
                                 Map<String, Object> config) throws Exception {
-            String field = readStringProperty(TYPE, tag, config, "field");
-            String targetField = readStringProperty(TYPE, tag, config, "target_field");
-
-            return new OpniJsonDetector(tag, description, field, targetField);
+            return new OpniJsonDetector(tag, description);
         }
     }
 }
