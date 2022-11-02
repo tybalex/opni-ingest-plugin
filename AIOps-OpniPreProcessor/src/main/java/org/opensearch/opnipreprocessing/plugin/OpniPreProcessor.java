@@ -67,17 +67,13 @@ public final class OpniPreProcessor extends AbstractProcessor {
 
     public static final String TYPE = "opnipre";
 
-    private final String field;
-    private final String targetField;
     private final OpniPreprocessingConfig config;
     private Connection nc;
     private LogMasker masker;
 
-    public OpniPreProcessor(String tag, String description, String field, String targetField, OpniPreprocessingConfig config)
+    public OpniPreProcessor(String tag, String description, OpniPreprocessingConfig config)
             throws IOException, PrivilegedActionException {
         super(tag, description);
-        this.field = field;
-        this.targetField = targetField;
         this.config = config;
 
         try{
@@ -327,12 +323,9 @@ public final class OpniPreProcessor extends AbstractProcessor {
         @Override
         public Processor create(Map<String, Processor.Factory> processorFactories, String tag, String description,
                                 Map<String, Object> config) throws Exception {
-            String field = readStringProperty(TYPE, tag, config, "field");
-            String targetField = readStringProperty(TYPE, tag, config, "target_field");
-
             OpniPreprocessingConfig pluginConfig = new OpniPreprocessingConfig(env);
             // OpniPreprocessingConfig pluginConfig = null;
-            return new OpniPreProcessor(tag, description, field, targetField, pluginConfig);
+            return new OpniPreProcessor(tag, description, pluginConfig);
         }
     }
 }
