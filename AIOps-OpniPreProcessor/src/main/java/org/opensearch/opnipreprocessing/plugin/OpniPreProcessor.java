@@ -103,16 +103,12 @@ public final class OpniPreProcessor extends AbstractProcessor {
                     String generated_id = getRandomID();
                     ingestDocument.setFieldValue("_id", generated_id);
                     preprocessingDocument(ingestDocument);
-
                     publishToNats(ingestDocument, nc);
-                    //publishToNats(ingestDocument, nc);
-                    if (!ingestDocument.getFieldValue("log_type", String.class).equals("workload")) {
-                        publishToNats(ingestDocument, nc);
-                    }
 
                     long endTime = System.nanoTime();
-                    // ingestDocument.setFieldValue("aiops_extraction_time_ms", (endTime-startTime) / 1000000.0);
-                    publishToNats(ingestDocument, nc);
+                    ingestDocument.setFieldValue("aiops_extraction_time_ms", (endTime-startTime) / 1000000.0);
+                    
+                    return ingestDocument;
                 }
             });
         } catch (PrivilegedActionException e) {
@@ -275,8 +271,8 @@ public final class OpniPreProcessor extends AbstractProcessor {
                 if (kubernetes.containsKey("pod_name")) {
                     podName = ((String)kubernetes.get("pod_name"));
                 }
-                if kubernetes.containsKey("namespace_name") {
-                    namespaceName = ((String)kubernetes.get("namespace_name"))
+                if (kubernetes.containsKey("namespace_name")) {
+                    namespaceName = ((String)kubernetes.get("namespace_name"));
                 } 
             }        
         }
