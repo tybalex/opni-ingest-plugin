@@ -106,7 +106,7 @@ public final class OpniPreProcessor extends AbstractProcessor {
                     publishToNats(ingestDocument, nc);
 
                     long endTime = System.nanoTime();
-                    ingestDocument.setFieldValue("aiops_extraction_time_ms", (endTime-startTime) / 1000000.0);
+                    //ingestDocument.setFieldValue("aiops_extraction_time_ms", (endTime-startTime) / 1000000.0);
                     
                     return ingestDocument;
                 }
