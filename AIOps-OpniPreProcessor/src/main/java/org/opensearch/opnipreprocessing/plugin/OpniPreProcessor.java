@@ -187,6 +187,54 @@ public final class OpniPreProcessor extends AbstractProcessor {
         **/
         ingestDocument.setFieldValue("template_matched", "");
         ingestDocument.setFieldValue("anomaly_level", ""); 
+        // normalize field `time`
+        long unixTime = System.currentTimeMillis();
+        ingestDocument.setFieldValue("ingest_at", ((Date)new Timestamp(unixTime)).toString());
+        if (!ingestDocument.hasField("time")){
+            if (ingestDocument.hasField("timestamp")) {
+                ingestDocument.setFieldValue("time", ingestDocument.getFieldValue("timestamp", String.class));
+                ingestDocument.setFieldValue("raw_ts", "yes");
+            }
+            else {
+                ingestDocument.setFieldValue("time", Long.toString(unixTime));
+                ingestDocument.setFieldValue("raw_ts", "no");
+            }
+        }
+        else {
+            ingestDocument.setFieldValue("raw_ts", "raw time");
+        }
+        if (ingestDocument.hasField("timestamp")) {
+            ingestDocument.removeField("timestamp"); 
+        }
+
+        // If it's an event we don't need to do any further processing
+        if (ingestDocument.hasField("log_type") && ingestDocument.getFieldValue("log_type", String.class).equals("event")) {
+            return;
+        }
+
+        // normalize field `log`
+        String actualLog = "NONE";
+        if (!ingestDocument.hasField("log")) {
+            if (ingestDocument.hasField("message")) {
+                actualLog = ingestDocument.getFieldValue("message", String.class);              
+                ingestDocument.removeField("message");
+                ingestDocument.setFieldValue("log_source_field", "message");
+            }
+            else if (ingestDocument.hasField("MESSAGE")) {
+                actualLog = ingestDocument.getFieldValue("MESSAGE", String.class);
+                ingestDocument.removeField("MESSAGE");
+                ingestDocument.setFieldValue("log_source_field", "MESSAGE");
+            }
+            else {
+                ingestDocument.setFieldValue("log_source_field", "NONE");
+            }
+        }
+        else {
+            actualLog = ingestDocument.getFieldValue("log", String.class);
+            ingestDocument.setFieldValue("log_source_field", "log");
+        }
+        actualLog = actualLog.trim();
+        ingestDocument.setFieldValue("log", actualLog);
 
         // If it's an event we don't need to do any further processing
         if (ingestDocument.hasField("log_type") && ingestDocument.getFieldValue("log_type", String.class).equals("event")) {
