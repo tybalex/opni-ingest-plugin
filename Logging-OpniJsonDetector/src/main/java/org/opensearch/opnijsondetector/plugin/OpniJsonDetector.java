@@ -174,6 +174,9 @@ public final class OpniJsonDetector extends AbstractProcessor {
     // @SuppressWarnings({"unchecked"})
     // @SuppressForbidden(reason = "allow #toLowerCase() usage for now")
     private void jsonExtractionFromLog(IngestDocument ingestDocument) {
+        if (!ingestDocument.hasField("log")) {
+            return;
+        }
         /**
          * detect and extract nested or embedded json in log strings
         **/
