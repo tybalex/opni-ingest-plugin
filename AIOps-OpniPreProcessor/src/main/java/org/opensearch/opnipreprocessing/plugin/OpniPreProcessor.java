@@ -290,9 +290,6 @@ public final class OpniPreProcessor extends AbstractProcessor {
 
     private void publishToNats (IngestDocument ingestDocument, Connection nc) throws PrivilegedActionException {
         // skip non inferred logs
-        if (ingestDocument.getFieldValue("log_type", String.class).equals("workload")) {
-            return;
-        }
         if (ingestDocument.getFieldValue("log_type", String.class).equals("event")) {
             return;
         }
