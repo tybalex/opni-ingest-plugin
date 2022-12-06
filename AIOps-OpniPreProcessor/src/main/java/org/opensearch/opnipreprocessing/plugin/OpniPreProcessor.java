@@ -106,7 +106,7 @@ public final class OpniPreProcessor extends AbstractProcessor {
                     publishToNats(ingestDocument, nc);
 
                     long endTime = System.nanoTime();
-                    // ingestDocument.setFieldValue("aiops_extraction_time_ms", (endTime-startTime) / 1000000.0);
+                    //ingestDocument.setFieldValue("aiops_extraction_time_ms", (endTime-startTime) / 1000000.0);
                     
                     return ingestDocument;
                 }
@@ -211,6 +211,8 @@ public final class OpniPreProcessor extends AbstractProcessor {
         // normalize field log_type and kubernetesComponent conponent
         String logType = "workload";
         String kubernetesComponent = "";
+        String podName = "";
+        String namespaceName = "";
         
         if (ingestDocument.hasField("filename")) {
             String controlPlaneName = ingestDocument.getFieldValue("filename", String.class);
@@ -266,18 +268,28 @@ public final class OpniPreProcessor extends AbstractProcessor {
                 if (kubernetes.containsKey("container_image") && ((String)kubernetes.get("container_image")).contains("longhornio-")) {
                     logType = "longhorn";
                 }
-                ingestDocument.setFieldValue("pod_name", ((String)kubernetes.get("pod_name")));
+                if (kubernetes.containsKey("pod_name")) {
+                    podName = ((String)kubernetes.get("pod_name"));
+                }
+                if (kubernetes.containsKey("namespace_name")) {
+                    namespaceName = ((String)kubernetes.get("namespace_name"));
+                } 
             }        
-        }  
+        }
+        if (!ingestDocument.hasField("deployment")) {
+            ingestDocument.setFieldValue("deployment", "");
+        }
+        if (!ingestDocument.hasField("service")) {
+            ingestDocument.setFieldValue("service", "");
+        }     
         ingestDocument.setFieldValue("log_type", logType);
         ingestDocument.setFieldValue("kubernetes_component", kubernetesComponent);
+        ingestDocument.setFieldValue("pod_name", podName);
+        ingestDocument.setFieldValue("namespace_name", namespaceName);
     }
 
     private void publishToNats (IngestDocument ingestDocument, Connection nc) throws PrivilegedActionException {
         // skip non inferred logs
-        if (ingestDocument.getFieldValue("log_type", String.class).equals("workload")) {
-            return;
-        }
         if (ingestDocument.getFieldValue("log_type", String.class).equals("event")) {
             return;
         }
@@ -285,7 +297,11 @@ public final class OpniPreProcessor extends AbstractProcessor {
                   .setId(ingestDocument.getFieldValue("_id", String.class))
                   .setClusterId(ingestDocument.getFieldValue("cluster_id", String.class))
                   .setLog(ingestDocument.getFieldValue("log", String.class))
-                  .setLogType(ingestDocument.getFieldValue("log_type", String.class)).build();
+                  .setLogType(ingestDocument.getFieldValue("log_type", String.class))
+                  .setPodName(ingestDocument.getFieldValue("pod_name", String.class))
+                  .setNamespaceName(ingestDocument.getFieldValue("namespace_name", String.class))
+                  .setDeployment(ingestDocument.getFieldValue("deployment", String.class))
+                  .setService(ingestDocument.getFieldValue("service", String.class)).build();
         nc.publish("raw_logs", payload.toByteArray() );
     }
 
