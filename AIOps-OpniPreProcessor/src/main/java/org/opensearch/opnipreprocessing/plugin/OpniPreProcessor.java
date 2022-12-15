@@ -265,7 +265,7 @@ public final class OpniPreProcessor extends AbstractProcessor {
                     ingestDocument.hasField("deployment") && ingestDocument.getFieldValue("deployment", String.class).equals("rancher")  ) {
                     logType = "rancher";
                 }
-                if (kubernetes.containsKey("container_image") && ((String)kubernetes.get("container_image")).contains("longhornio-")) {
+                if (kubernetes.containsKey("container_image") && ((String)kubernetes.get("container_image")).contains("longhornio")) {
                     logType = "longhorn";
                 }
                 if (kubernetes.containsKey("pod_name")) {
