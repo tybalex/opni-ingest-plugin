@@ -176,6 +176,13 @@ public final class OpniPreProcessor extends AbstractProcessor {
     // @SuppressWarnings({"unchecked"})
     @SuppressForbidden(reason = "only use PathUtil to get filename")
     private void preprocessingDocument(IngestDocument ingestDocument) {
+        /* 
+         * Do not preprocess if document has been through the otel collector
+        */
+        if (isOtelCollector(ingestDocument)) {
+            return;
+        }
+
         /**
         preprocessing documents:
         0. initialize a few fields for downstream AI services.
@@ -293,6 +300,10 @@ public final class OpniPreProcessor extends AbstractProcessor {
         if (ingestDocument.getFieldValue("log_type", String.class).equals("event")) {
             return;
         }
+        if (isOtelCollector(ingestDocument)) {
+            return;
+        }
+        
         OpniPayloadProto.Payload payload = OpniPayloadProto.Payload.newBuilder()
                   .setId(ingestDocument.getFieldValue("_id", String.class))
                   .setClusterId(ingestDocument.getFieldValue("cluster_id", String.class))
@@ -323,6 +334,13 @@ public final class OpniPreProcessor extends AbstractProcessor {
             return ingestDocument.getFieldValue("cluster_id", String.class);
         }
         return "";
+    }
+
+    private boolean isOtelCollector (IngestDocument ingestDocument) {
+        if (ingestDocument.hasField("opni_collector")) {
+            return ingestDocument.getFieldValue("opni_collector", String.class) == "otel";
+        }
+        return false;
     }
 
     private String maskLogs(String log) {
