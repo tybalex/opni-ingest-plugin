@@ -281,7 +281,16 @@ public final class OpniPreProcessor extends AbstractProcessor {
                 if (kubernetes.containsKey("namespace_name")) {
                     namespaceName = ((String)kubernetes.get("namespace_name"));
                 } 
-            }        
+            }
+            if (ingestDocument.hasField("container_image")) {
+                if (ingestDocument.getFieldValue("container_image", String.class).contains("rancher/rancher") &&
+                    ingestDocument.hasField("deployment") && ingestDocument.getFieldValue("deployment", String.class).equals("rancher")  ) {
+                    logType = "rancher";
+                }
+                if (ingestDocument.getFieldValue("container_image", String.class).contains("longhornio")) {
+                    logType = "longhorn";
+                }
+            }
         }
         if (!ingestDocument.hasField("deployment")) {
             ingestDocument.setFieldValue("deployment", "");
@@ -291,8 +300,12 @@ public final class OpniPreProcessor extends AbstractProcessor {
         }     
         ingestDocument.setFieldValue("log_type", logType);
         ingestDocument.setFieldValue("kubernetes_component", kubernetesComponent);
-        ingestDocument.setFieldValue("pod_name", podName);
-        ingestDocument.setFieldValue("namespace_name", namespaceName);
+        if (!ingestDocument.hasField("pod_name")) {
+            ingestDocument.setFieldValue("pod_name", podName);
+        }
+        if (!ingestDocument.hasField("namespace_name")) {
+            ingestDocument.setFieldValue("namespace_name", namespaceName);
+        }
     }
 
     private void publishToNats (IngestDocument ingestDocument, Connection nc) throws PrivilegedActionException {
