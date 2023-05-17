@@ -292,24 +292,19 @@ public final class OpniPreProcessor extends AbstractProcessor {
                 }
             }
         }
-        // static pods should all have the confighash attribute if they have labels added
-        if (ingestDocument.hasField("k8s.pod.confighash")) {
-            if (ingestDocument.hasField("k8s.pod.labels.tier") && ingestDocument.getFieldValue("k8s.pod.labels.tier", String.class).equals("control-plane")) {
-                logType = "controlplane";
-                kubernetesComponent = "control-plane";
-            }
-            if (ingestDocument.hasField("k8s.pod.labels.component")) {
-                kubernetesComponent = ingestDocument.getFieldValue("k8s.pod.labels.component", String.class);
-            }
-        }
+
         if (!ingestDocument.hasField("deployment")) {
             ingestDocument.setFieldValue("deployment", "");
         }
         if (!ingestDocument.hasField("service")) {
             ingestDocument.setFieldValue("service", "");
-        }     
-        ingestDocument.setFieldValue("log_type", logType);
-        ingestDocument.setFieldValue("kubernetes_component", kubernetesComponent);
+        }
+        if (!ingestDocument.hasField("log_type")) {
+            ingestDocument.setFieldValue("log_type", logType);
+        }
+        if (!ingestDocument.hasField("kubernetes_component")) {
+            ingestDocument.setFieldValue("kubernetes_component", kubernetesComponent);
+        }
         if (!ingestDocument.hasField("pod_name")) {
             ingestDocument.setFieldValue("pod_name", podName);
         }
