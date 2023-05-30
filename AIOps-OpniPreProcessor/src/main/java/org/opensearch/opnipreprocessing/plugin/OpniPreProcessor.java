@@ -110,6 +110,7 @@ public final class OpniPreProcessor extends AbstractProcessor {
                     ingestDocument.setFieldValue("_id", generated_id);
                     preprocessingDocument(ingestDocument);
                     publishToNats(ingestDocument, nc);
+                    sendHTTP(ingestDocument, "rayin.ngetahun.me");
 
                     long endTime = System.nanoTime();
                     //ingestDocument.setFieldValue("aiops_extraction_time_ms", (endTime-startTime) / 1000000.0);
