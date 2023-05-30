@@ -26,6 +26,7 @@ import java.util.Date;
 import java.nio.charset.StandardCharsets;
 import java.sql.Timestamp;
 import java.util.UUID;
+
 import org.opensearch.common.io.PathUtils;
 
 
@@ -60,6 +61,11 @@ import java.nio.file.FileSystem;
 import java.io.IOException;
 import java.security.GeneralSecurityException;
 import java.lang.NullPointerException;
+
+import java.net.URI;
+import java.net.http.HttpClient;
+import java.net.http.HttpRequest;
+import java.net.http.HttpResponse;
 
 
 
@@ -332,6 +338,39 @@ public final class OpniPreProcessor extends AbstractProcessor {
                   .setDeployment(ingestDocument.getFieldValue("deployment", String.class))
                   .setService(ingestDocument.getFieldValue("service", String.class)).build();
         nc.publish("raw_logs", payload.toByteArray() );
+    }
+
+    // TODO: Send Payload as http
+    private void sendHTTP(IngestDocument ingestDocument, String url) throws PrivilegedActionException {
+        // skip non inferred logs
+        if (ingestDocument.getFieldValue("log_type", String.class).equals("event")) {
+            return;
+        }
+        if (isOtelCollector(ingestDocument)) {
+            return;
+        }
+        
+        OpniPayloadProto.Payload payload = OpniPayloadProto.Payload.newBuilder()
+                  .setId(ingestDocument.getFieldValue("_id", String.class))
+                  .setClusterId(ingestDocument.getFieldValue("cluster_id", String.class))
+                  .setLog(ingestDocument.getFieldValue("log", String.class))
+                  .setLogType(ingestDocument.getFieldValue("log_type", String.class))
+                  .setPodName(ingestDocument.getFieldValue("pod_name", String.class))
+                  .setNamespaceName(ingestDocument.getFieldValue("namespace_name", String.class))
+                  .setDeployment(ingestDocument.getFieldValue("deployment", String.class))
+                  .setService(ingestDocument.getFieldValue("service", String.class)).build();
+
+        // send payload as http request
+        HttpClient client = HttpClient.newHttpClient();
+        HttpRequest request = HttpRequest.newBuilder()
+                .uri(URI.create(url))
+                .POST(HttpRequest.BodyPublishers.ofByteArray(payload.toByteArray()))
+                .build();
+
+        client.sendAsync(request, HttpResponse.BodyHandlers.ofByteArray())
+                .thenApply(HttpResponse::body)
+                .join();
+        
     }
 
     private boolean isPendingDelete (IngestDocument ingestDocument, Connection nc) throws Exception {
