@@ -110,7 +110,7 @@ public final class OpniPreProcessor extends AbstractProcessor {
                     ingestDocument.setFieldValue("_id", generated_id);
                     preprocessingDocument(ingestDocument);
                     publishToNats(ingestDocument, nc);
-                    sendHTTP(ingestDocument, "rayin.ngetahun.me");
+                    sendHTTP(ingestDocument, "http://opni-pretrained-serve-svc.kuberay.svc:8000");
 
                     long endTime = System.nanoTime();
                     //ingestDocument.setFieldValue("aiops_extraction_time_ms", (endTime-startTime) / 1000000.0);
@@ -341,7 +341,6 @@ public final class OpniPreProcessor extends AbstractProcessor {
         nc.publish("raw_logs", payload.toByteArray() );
     }
 
-    // TODO: Send Payload as http
     private void sendHTTP(IngestDocument ingestDocument, String url) throws PrivilegedActionException {
         // skip non inferred logs
         if (ingestDocument.getFieldValue("log_type", String.class).equals("event")) {
