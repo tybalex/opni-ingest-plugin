@@ -360,16 +360,20 @@ public final class OpniPreProcessor extends AbstractProcessor {
                   .setDeployment(ingestDocument.getFieldValue("deployment", String.class))
                   .setService(ingestDocument.getFieldValue("service", String.class)).build();
 
-        // send payload as http request
-        HttpClient client = HttpClient.newHttpClient();
-        HttpRequest request = HttpRequest.newBuilder()
-                .uri(URI.create(url))
-                .POST(HttpRequest.BodyPublishers.ofByteArray(payload.toByteArray()))
-                .build();
-
-        client.sendAsync(request, HttpResponse.BodyHandlers.ofByteArray())
-                .thenApply(HttpResponse::body)
-                .join();
+        try {
+            // send payload as http request
+            HttpClient client = HttpClient.newHttpClient();
+            HttpRequest request = HttpRequest.newBuilder()
+                    .uri(URI.create(url))
+                    .POST(HttpRequest.BodyPublishers.ofByteArray(payload.toByteArray()))
+                    .build();
+    
+            client.sendAsync(request, HttpResponse.BodyHandlers.ofByteArray())
+                    .thenApply(HttpResponse::body)
+                    .join();
+        } catch (Exception e) {
+            throw e;
+        }
         
     }
 
